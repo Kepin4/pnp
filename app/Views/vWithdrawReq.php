@@ -180,7 +180,9 @@
                                     </tbody>
                                     <tfoot>
                                         <?php
-                                        $Amount = array_sum(array_column($dtReqTopup, 'amount'));
+                                        $Amount = array_sum(array_column(array_filter($dtReqTopup, function ($x) {
+                                            return $x->status == 5;
+                                        }), 'amount'));
                                         ?>
                                         <tr>
                                             <th class="text-center" colspan="3">Total</th>

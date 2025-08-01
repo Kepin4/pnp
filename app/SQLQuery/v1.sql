@@ -1,0 +1,6 @@
+CREATE TABLE tblactivekey (
+    id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    kode varchar(15) NOT NULL DEFAULT '',
+    inputby int(5) NOT NULL DEFAULT 0,
+    inputdate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

@@ -104,7 +104,19 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script>
+    $('#txtUsername').on('keydown', function(ev) {
+        if (ev.key == ' ') {
+            ev.preventDefault();
+        }
+    });
+    $('#txtUsername').on('change', function(ev) {
+        if (!$(this).val()) { return }
+        const xVal = ($(this).val()).toString().replace(/ /g, "");
+        $(this).val(xVal);
+    });
+
     $('#selLevel').on('change', function() {
+        console.log("Test")
         if ($(this).val() == 4) {
             $('#pnlKomisi').css('display', 'block')
             $('#pnlMaxCashback').css('display', 'block')

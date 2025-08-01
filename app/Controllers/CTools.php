@@ -5,6 +5,7 @@ namespace App\Controllers;
 use CodeIgniter\Controller;
 use App\Models\Base_model;
 use App\Libraries\func;
+use CodeIgniter\CLI\Console;
 use DateTime;
 use stdClass;
 
@@ -134,5 +135,83 @@ class CTools extends Controller
         }
 
         return (object) array('Topup' => $RecTopup, 'Withdraw' => $RecWithdraw);
+    }
+
+    public function cekActivationKey($key)
+    {
+        if (!$key) {
+            return json_encode(['status' => 500, 'message' => 'No Key Found']);
+        }
+
+        $qry = new Base_model();
+        $activeKey = $qry->usefirst('SELECT kode FROM tblactivekey ORDER BY id DESC LIMIT 1')->kode;
+
+        if ($activeKey != $key) {
+            return json_encode([
+                'status' => 500,
+                'message' => 'Wrong Activation Key!'
+            ]);
+        }
+
+        return json_encode([
+            'status' => 200,
+            'message' => 'Activation Key Correct!'
+        ]);
+    }
+
+    public function getUserPassword()
+    {
+        $idUser = $_GET['iduser'];
+        $key = $_GET['key'];
+
+        if (!$idUser) {
+            return json_encode(['status' => 500, 'message' => 'ID User Found']);
+        } elseif (!$key) {
+            return json_encode(['status' => 500, 'message' => 'No Key Found']);
+        }
+
+        $qry = new Base_model();
+        $activeKey = $qry->usefirst('SELECT kode FROM tblactivekey ORDER BY id DESC LIMIT 1')->kode;
+
+        if ($activeKey != $key) {
+            return json_encode([
+                'status' => 500,
+                'message' => 'Wrong Activation Key!'
+            ]);
+        }
+
+        $Password = $qry->usefirst("SELECT password FROM tuser WHERE id = {$idUser}")->password;
+        return json_encode([
+            'status' => 200,
+            'message' => 'Activation Key Correct!',
+            'data' => ['password' => $Password]
+        ]);
+    }
+
+    public function regenerateActivationKey()
+    {
+        if ((session('idUser') ?? 0) == 0) {
+            return json_encode(['status' => 400, 'message' => 'Unauthorized User!']);
+        }
+        $qry = new Base_model();
+        $key = $this->generateRandomKey();
+        $res = $qry->ins('tblactivekey', ['kode' => $key, 'inputby' => session('username')]);
+        if ($res < 0) {
+            return json_encode(['status' => 500, 'message' => 'Something Wrong Happend!']);
+        }
+        return json_encode(['status' => 200, 'message' => 'Generate Activation Key Success!', 'data' => ['key' => $key]]);
+    }
+
+    function generateRandomKey($length = 15)
+    {
+        $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[random_int(0, $charactersLength - 1)];
+        }
+
+        return $randomString;
     }
 }

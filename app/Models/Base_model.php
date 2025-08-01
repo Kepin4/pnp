@@ -107,4 +107,11 @@ class Base_model extends Model
         }
         return $this->db->escape($x);
     }
+
+    function logPHP($data)
+    {
+        $output = $data;
+        if (is_array($output)) $output = implode(',', $output);
+        echo "<script>console.log('Debug Objects: " . $output . "' );</script>";
+    }
 }

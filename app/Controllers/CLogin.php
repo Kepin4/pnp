@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use CodeIgniter\Controller;
 use App\Models\Base_model;
+use PhpOffice\PhpSpreadsheet\Calculation\TextData\Replace;
 
 class CLogin extends Controller
 {
@@ -47,6 +48,13 @@ class CLogin extends Controller
         $Username = $this->request->getPost('txtUsername');
         $Password = $this->request->getPost('txtPassword');
         $str = "";
+
+        if (!$Username || !$Password) {
+            session()->setFlashdata('LoginError', 'Invalid username or password.');
+            return redirect()->to('../CLogin/Login');
+        }
+
+        $Username = str_replace(" ", '', $Username);
 
         $whr = array('username' => $Username, 'password' => $Password);
         $whrM = array('username' => $Username);

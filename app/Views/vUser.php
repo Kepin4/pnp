@@ -155,7 +155,7 @@
 
 <div id="pnlDetailUser" style="width: 100vw; height: 100vh; top: 0; left: 0; z-index: 99999; background-color: rgba(0, 0, 0, 0.5); position: fixed; justify-content: center; align-items: center; display: none;">
     <form id="frmDetailUser" action="<?= base_url('../CData/UpdateUser') ?>" method="post">
-        <div id="cardHeight" class=" card" style="width: 350px; height: 400px;">
+        <div id="cardHeight" class="card h-auto" style="width: 350px;">
             <span id="btnClose2" style="font-size: 35px; height: 15px; left: 15px; font-weight: bold; cursor: pointer; float: right; position: absolute; padding-top: 3px;">&times;</span>
             <div class="card-body p-5 align-content-center pt-5">
                 <input type="hidden" id="txtID" name="txtID">
@@ -176,11 +176,22 @@
                 </div>
 
                 <div class="row">
+                    <div class="position-relative">
+                        <label id="lblPassword" for="txtPassword">Password</label>
+                        <input type="password" id="txtPassword" name="txtPassword" class="form-control mb-2 w-100" autocomplete="false" value="********" disabled>
+                        <i class="fa-solid fa-eye toggle-password"
+                            id="togglePassword"
+                            style="position: absolute; top: 40px; right: 20px; cursor: pointer;"></i>
+                    </div>
+                </div>
+
+                <div class="row">
                     <div class="col-6">
-                        <label id="lblPassConf" for="txtCashback">Cashback <span>%</span></label>
+                        <label id="lblCashback" for="txtCashback">Cashback <span>%</span></label>
                         <input type="number" id="txtCashback" name="txtCashback" class="form-control mb-2 w-100" val="0" step="any">
                     </div>
                 </div>
+
                 <div class="row" id="pnlKomisi" style="display: none;">
                     <div class="col-6">
                         <label id="lblKomisi" for="txtKomisi">Komisi <span>%</span></label>
@@ -208,12 +219,70 @@
 
 
 <script>
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('txtPassword');
+
+    togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        const myLevel = '<?= session('level') ?>';
+        if (type == 'text') {
+
+            const xKey = prompt('Activation Key');
+            if (!xKey) {
+                return;
+            }
+
+            $.ajax({
+                url: '<?= base_url('../CTools/getUserPassword/') ?>',
+                type: 'GET',
+                data: {
+                    iduser: $('#txtID').val(),
+                    key: xKey
+                },
+                dataType: 'json',
+                success: function(res) {
+                    console.log(res)
+                    if (res.status != 200) {
+                        fAlert(`3|${res.message}`);
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                        return
+                    }
+
+                    $('#txtPassword').val(res.data.password)
+                    passwordInput.setAttribute('type', type);
+                    this.classList.toggle('fa-eye');
+                    this.classList.toggle('fa-eye-slash');
+                },
+                error: function(err) {
+                    console.error(err)
+                    fAlert(`3|${err}`);
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                    return
+                }
+            })
+        } else {
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        }
+    });
+</script>
+
+<script>
     let myLevel = '<?= session('level'); ?>'
     $(document).ready(function() {
         $('#tblTrans').DataTable({});
 
         $('#frmDetailUser').on('submit', function(e) {
             $('#btnSubmit').prop('disabled', true);
+
+
             let xPass1 = $('#txtPass').val();
             let xPass2 = $('#txtPassConf').val();
             if (xPass1 != xPass2) {
@@ -256,6 +325,7 @@
     });
 
     function ShowDetail($ID) {
+        $('#txtID').val($ID);
         txtID.value = $ID;
         txtIDChangePass.value = $ID;
         $.ajax({
@@ -267,7 +337,6 @@
                     fAlert("3|Data User Tidak diTemukan!");
                     return;
                 }
-                console.table(qData);
                 $('#txtNamaUser').val(qData.username);
                 $('#lblSaldoUser').text("Saldo : " + formatNumber(qData.Saldo));
                 $('#cbLevel').val(qData.level);

@@ -175,24 +175,65 @@
                     </div>
                 </div>
             </form>
-            <form action="<?= base_url('../CAdmin/SaveInformasi') ?>" method="POST">
-                <div class="card p-4 ml-5" style="width: auto; max-width: 450px;">
-                    <div class="row p-2">
-                        <label for="meInformasi" class="p-0">Informasi</label>
-                        <textarea name="meInformasi" id="meInformasi" class="form-control mt-0" style="min-height: 150px;"><?= $Informasi ?></textarea>
+            <div>
+                <form action="<?= base_url('../CAdmin/SaveInformasi') ?>" method="POST">
+                    <div class="card p-4 ml-5" style="width: auto; max-width: 450px;">
+                        <div class="row p-2">
+                            <label for="meInformasi" class="p-0">Informasi</label>
+                            <textarea name="meInformasi" id="meInformasi" class="form-control mt-0" style="min-height: 150px;"><?= $Informasi ?></textarea>
+                        </div>
+                        <div class="row p-2">
+                            <label for="meCaraMain" class="p-0">Cara Main</label>
+                            <textarea name="meCaraMain" id="meCaraMain" class="form-control mt-0" style="min-height: 150px;"><?= $CaraMain ?></textarea>
+                        </div>
+                        <button class="btn btn-sm btn-primary w-30 p-2">Save</button>
                     </div>
-                    <div class="row p-2">
-                        <label for="meCaraMain" class="p-0">Cara Main</label>
-                        <textarea name="meCaraMain" id="meCaraMain" class="form-control mt-0" style="min-height: 150px;"><?= $CaraMain ?></textarea>
-                    </div>
-                    <button class="btn btn-sm btn-primary w-30 p-2">Save</button>
-                </div>
-            </form>
+                </form>
+
+                <?php if (session('idUser') == 1) { ?>
+                    <button id="btnRegenerate" class="btn btn-sm btn-primary w-max-[450px] mx-5 my-2" onclick="reGenerateCode(this)">Generate New Activation Key</button>
+                <?php } ?>
+            </div>
         </div>
     </main>
 </body>
 
 <script>
+    function reGenerateCode(btn) {
+        $(btn).prop('disabled', true)
+        $.ajax({
+            url: '<?= base_url('../CTools/regenerateActivationKey') ?>',
+            type: 'GET',
+            dataType: 'json',
+            success: function(res) {
+                if (res.status == 200) {
+                    fAlert(`5|Success Generate New Activation Key = ${res.data.key}`)
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    fAlert(`3|${res.message}`)
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+                $(btn).prop('disabled', false)
+            },
+            error: function(err) {
+                console.error(err)
+                fAlert(`3|${err}`)
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                $(btn).prop('disabled', false)
+            },
+
+        })
+    }
+
     function confirmClearData() {
         var userConfirmation = confirm("Are you sure you want to clear the data?");
         if (userConfirmation) {

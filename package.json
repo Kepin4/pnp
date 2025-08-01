@@ -1,0 +1,9 @@
+{
+    "scripts": {
+        "start": "nodemon --exec php spark serve --ext php --ignore vendor/ --ignore writable/",
+        "watch": "nodemon"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.0"
+    }
+}

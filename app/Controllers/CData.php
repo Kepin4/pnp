@@ -22,7 +22,7 @@ class CData extends Controller
         $myLevel = session('level');
         $myID = session('idUser');
         $whrLevel = ($myLevel == 1 ? "" : ($myLevel == 4 ? "WHERE idatasan = '{$myID}'" : "WHERE level > '$myLevel' "));
-        $str = "SELECT id, username, level, cashback, idatasan, komisi, status FROM tuser $whrLevel";
+        $str = "SELECT id, username, level, cashback, idatasan, komisi, status FROM tuser $whrLevel ORDER BY status ASC, id ASC ";
         $dtUser = $qry->use($str);
 
         $str = "SELECT iduser, SUM(amount) amount FROM tsaldo GROUP BY iduser";
@@ -71,6 +71,13 @@ class CData extends Controller
 
         $dt = $this->request->getPost();
         $Username = $dt["txtUsername"];
+
+        if (!$Username) {
+            session()->setflashdata('alert', '3|Harap isi Username!');
+            return redirect()->to('../CData/User');
+        }
+
+        $Username = str_replace(" ", "", $Username);
         $str = "SELECT 1 FROM tuser WHERE username = '{$Username}'";
         if ($qry->usefirst($str)) {
 
@@ -79,7 +86,7 @@ class CData extends Controller
         }
 
         $dtIns = array(
-            'username' => $dt['txtUsername'],
+            'username' => $Username,
             'password' => $dt['txtPassword'],
             'level' => $dt['selLevel'],
             'cashback' => $dt['txtCashback'],
