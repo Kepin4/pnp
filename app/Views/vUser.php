@@ -73,6 +73,21 @@
                                     </div>
                                 <?php } ?>
                             </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <div class="filter-box">
+                                        <label for="levelFilter" class="form-label mb-1" style="font-size: 12px; font-weight: bold; color: #cb0c9f;">Filter by Level:</label>
+                                        <select id="levelFilter" class="form-control filter-input" style="font-size: 12px; padding: 5px;">
+                                            <option value="">All Levels</option>
+                                            <option value="Maintenance">Maintenance</option>
+                                            <option value="Admin">Admin</option>
+                                            <option value="Kasir">Kasir</option>
+                                            <option value="Agent">Agent</option>
+                                            <option value="VIP">VIP</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
 
@@ -277,7 +292,13 @@
 <script>
     let myLevel = '<?= session('level'); ?>'
     $(document).ready(function() {
-        $('#tblTrans').DataTable({});
+        var table = $('#tblTrans').DataTable({});
+
+        // Level filter functionality
+        $('#levelFilter').on('change', function() {
+            var selectedLevel = $(this).val();
+            table.column(2).search(selectedLevel).draw();
+        });
 
         $('#frmDetailUser').on('submit', function(e) {
             $('#btnSubmit').prop('disabled', true);

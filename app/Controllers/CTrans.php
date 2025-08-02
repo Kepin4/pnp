@@ -8,6 +8,7 @@ use App\Helpers;
 use App\Libraries\func;
 use DateTime;
 use stdClass;
+use Exception;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -624,6 +625,184 @@ class CTrans extends Controller
         echo view('vFooter');
     }
 
+    public function ajaxTopupRequests()
+    {
+        $qry = new Base_model();
+        $xJam = new Datetime($qry->getWaktu());
+
+        $myID = session('idUser');
+        $myLevel = session('level');
+
+        // Get filter parameters
+        $dtStart = $this->request->getGet('dtStart');
+        $dtEnd = $this->request->getGet('dtEnd');
+        $status = $this->request->getGet('status');
+        $chkRequest = $this->request->getGet('chkRequest');
+
+        // Set default dates if not provided
+        $dtStart = !$dtStart ? $xJam->format("Y-m-d") : $dtStart;
+        $dtEnd = !$dtEnd ? $xJam->format("Y-m-d") : $dtEnd;
+
+        // Build WHERE clause for user permissions
+        $xWhr = "";
+        if (!($myLevel >= 1 && $myLevel <= 3)) {
+            $xWhr = "AND r.iduser = '{$myID}'";
+        }
+
+        // Build WHERE clause for status filter
+        $statusWhr = "";
+        if (!empty($status)) {
+            $statusWhr = "AND r.status = '{$status}'";
+        }
+
+        try {
+            // Build the main query
+            $str = "SELECT r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate,
+                           CASE 
+                               WHEN r.status = 5 THEN (SELECT username FROM tuser WHERE id = r.updateby)
+                               ELSE ''
+                           END as topup_by,
+                           CASE 
+                               WHEN r.status = 8 THEN (SELECT username FROM tuser WHERE id = r.updateby)
+                               ELSE ''
+                           END as refused_by,
+                           CASE 
+                               WHEN r.status IN (5, 8) THEN r.updatedate
+                               ELSE NULL
+                           END as update_time
+                    FROM treqtopup r 
+                    INNER JOIN tuser u ON r.iduser = u.id 
+                    WHERE 1=1 {$xWhr} {$statusWhr}";
+
+            // Apply date or request filter
+            if ($chkRequest == 'on') {
+                $str .= " AND r.status = 1";
+            } else {
+                $str .= " AND date(r.tanggal) BETWEEN '{$dtStart}' AND '{$dtEnd}'";
+            }
+
+            $str .= " ORDER BY r.id DESC";
+
+            $dtReqTopup = $qry->use($str);
+
+            // Calculate summary
+            $totalAmount = 0;
+            if (!empty($dtReqTopup)) {
+                $approvedRequests = array_filter($dtReqTopup, function($item) {
+                    return $item->status == 5;
+                });
+                $totalAmount = array_sum(array_column($approvedRequests, 'amount'));
+            }
+
+            // Prepare response
+            $response = [
+                'success' => true,
+                'data' => $dtReqTopup,
+                'summary' => [
+                    'total_amount' => $totalAmount,
+                    'total_records' => count($dtReqTopup)
+                ]
+            ];
+
+            return $this->response->setJSON($response);
+
+        } catch (Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error loading data: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function ajaxWithdrawRequests()
+    {
+        $qry = new Base_model();
+        $xJam = new Datetime($qry->getWaktu());
+
+        $myID = session('idUser');
+        $myLevel = session('level');
+
+        // Get filter parameters
+        $dtStart = $this->request->getGet('dtStart');
+        $dtEnd = $this->request->getGet('dtEnd');
+        $status = $this->request->getGet('status');
+        $chkRequest = $this->request->getGet('chkRequest');
+
+        // Set default dates if not provided
+        $dtStart = !$dtStart ? $xJam->format("Y-m-d") : $dtStart;
+        $dtEnd = !$dtEnd ? $xJam->format("Y-m-d") : $dtEnd;
+
+        // Build WHERE clause for user permissions
+        $xWhr = "";
+        if (!($myLevel >= 1 && $myLevel <= 3)) {
+            $xWhr = "AND r.iduser = '{$myID}'";
+        }
+
+        // Build WHERE clause for status filter
+        $statusWhr = "";
+        if (!empty($status)) {
+            $statusWhr = "AND r.status = '{$status}'";
+        }
+
+        try {
+            // Build the main query
+            $str = "SELECT r.kodereq, r.noref, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate,
+                           CASE 
+                               WHEN r.status = 5 THEN (SELECT username FROM tuser WHERE id = r.updateby)
+                               ELSE ''
+                           END as withdraw_by,
+                           CASE 
+                               WHEN r.status = 8 THEN (SELECT username FROM tuser WHERE id = r.updateby)
+                               ELSE ''
+                           END as refused_by,
+                           CASE 
+                               WHEN r.status IN (5, 8) THEN r.updatedate
+                               ELSE NULL
+                           END as update_time
+                    FROM treqwithdraw r 
+                    INNER JOIN tuser u ON r.iduser = u.id 
+                    WHERE 1=1 {$xWhr} {$statusWhr}";
+
+            // Apply date or request filter
+            if ($chkRequest == 'on') {
+                $str .= " AND r.status = 1";
+            } else {
+                $str .= " AND date(r.tanggal) BETWEEN '{$dtStart}' AND '{$dtEnd}'";
+            }
+
+            $str .= " ORDER BY r.id DESC";
+
+            $dtReqWithdraw = $qry->use($str);
+
+            // Calculate summary
+            $totalAmount = 0;
+            if (!empty($dtReqWithdraw)) {
+                $approvedRequests = array_filter($dtReqWithdraw, function($item) {
+                    return $item->status == 5;
+                });
+                $totalAmount = array_sum(array_column($approvedRequests, 'amount'));
+            }
+
+            // Prepare response
+            $response = [
+                'success' => true,
+                'data' => $dtReqWithdraw,
+                'summary' => [
+                    'total_amount' => $totalAmount,
+                    'total_records' => count($dtReqWithdraw)
+                ]
+            ];
+
+            return $this->response->setJSON($response);
+
+        } catch (Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error loading data: ' . $e->getMessage()
+            ]);
+        }
+    }
+
 
     public function WithdrawRequest()
     {
@@ -1055,12 +1234,8 @@ class CTrans extends Controller
                     return $x->iduser == $q2->id;
                 });
 
-                $qWin = array_sum(array_column($tWin, "total"));
-                $qNominalPlay = array_sum(array_column($tWin, "amount"));
-                $qCashback = array_sum(array_column($tWin, "cashback"));
-
                 $qWinD += array_sum(array_column($tWinD, "total"));
-                $qNominalPlayD +=  array_sum(array_column($tWin, "amount"));
+                $qNominalPlayD +=  array_sum(array_column($tWinD, "amount"));
                 $qPlacementDCashback += array_sum(array_column($tWinD, "cashback"));
             }
 
