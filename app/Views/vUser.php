@@ -149,10 +149,15 @@
 
 <div id="pnlChangePass" style="width: 100vw; height: 100vh; top: 0; left: 0; z-index: 999999; background-color: rgba(0, 0, 0, 0.5); position: fixed; justify-content: center; align-items: center; display: none;">
     <form id="frmChangePass" action="<?= base_url('../CData/ChangePass') ?>" method="post">
-        <div class=" card" style="width: 250px; height: 300px;">
+        <div class=" card" style="width: 250px; height: 350px;">
             <span id="btnClose" style="font-size: 35px; height: 15px; left: 15px; font-weight: bold; cursor: pointer; float: right; position: absolute; padding-top: 3px;">&times;</span>
             <div class="card-body p-5 align-content-center pt-6">
                 <input type="hidden" id="txtIDChangePass" name="txtIDChangePass">
+
+                <div id="pnlActivationKey" style="<?= (session('level') == 1 ? 'display: none;' : '') ?>">
+                    <label for="txtActivationKey">Activation Key</label>
+                    <input type="text" id="txtActivationKey" name="txtActivationKey" class="form-control mb-2" <?= (session('level') == 1 ? '' : 'required') ?>>
+                </div>
 
                 <label for="txtPass">Password</label>
                 <input type="password" id="txtPass" name="txtPass" class="form-control mb-2" required autocomplete="new-password">
@@ -313,12 +318,89 @@
                 $('#btnSubmit').prop('disabled', false);
             }
         });
+
+        $('#frmChangePass').on('submit', function(e) {
+            e.preventDefault();
+            $('#btnSubmitChangePass').prop('disabled', true);
+
+            let xPass1 = $('#txtPass').val();
+            let xPass2 = $('#txtPassConf').val();
+            let myLevel = '<?= session('level') ?>';
+            let xActivationKey = $('#txtActivationKey').val();
+
+            // Check password match
+            if (xPass1 != xPass2) {
+                fAlert("3|Password not Match");
+                $('#lblPassConf').css('color', 'red');
+                $('#btnSubmitChangePass').prop('disabled', false);
+                return;
+            }
+
+            // Reset label color
+            $('#lblPassConf').css('color', '');
+
+            // If level is 1, skip activation key validation
+            if (myLevel == '1') {
+                // Submit form directly
+                submitChangePasswordForm();
+                return;
+            }
+
+            // Validate activation key for other levels
+            if (!xActivationKey) {
+                fAlert("3|Activation Key is required");
+                $('#btnSubmitChangePass').prop('disabled', false);
+                return;
+            }
+
+            // Validate activation key via AJAX
+            $.ajax({
+                url: '<?= base_url('../CTools/getUserPassword/') ?>',
+                type: 'GET',
+                data: {
+                    iduser: $('#txtIDChangePass').val(),
+                    key: xActivationKey
+                },
+                dataType: 'json',
+                success: function(res) {
+                    if (res.status != 200) {
+                        fAlert(`3|${res.message}`);
+                        $('#btnSubmitChangePass').prop('disabled', false);
+                        return;
+                    }
+                    // Activation key is valid, submit form
+                    submitChangePasswordForm();
+                },
+                error: function(err) {
+                    console.error(err);
+                    fAlert("3|Error validating activation key");
+                    $('#btnSubmitChangePass').prop('disabled', false);
+                }
+            });
+        });
+
+        function submitChangePasswordForm() {
+            // Create form data
+            let formData = new FormData();
+            formData.append('txtIDChangePass', $('#txtIDChangePass').val());
+            formData.append('txtPass', $('#txtPass').val());
+            formData.append('txtPassConf', $('#txtPassConf').val());
+
+            // Submit via AJAX or allow normal form submission
+            $('#frmChangePass')[0].submit();
+        }
         $('#btnClose2 ').on('click ', function() {
             $('#pnlDetailUser').css('display', 'none')
         });
 
         $('#btnClose ').on('click ', function() {
-            $('#pnlChangePass').css('display', 'none')
+            $('#pnlChangePass').css('display', 'none');
+            // Clear form fields for security
+            $('#txtActivationKey').val('');
+            $('#txtPass').val('');
+            $('#txtPassConf').val('');
+            $('#lblPassConf').css('color', '');
+            $('#btnSubmitChangePass').prop('disabled', false);
         });
 
         $('#txtCashback').on('change', function(x) {
