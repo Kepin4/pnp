@@ -416,7 +416,7 @@
         const isProcessed = (item.status == 5 || item.status == 8);
         
         // Check user level permissions
-        if (!(userLevel >= 1 && userLevel <= 3)) {
+        if ((userLevel >= 1 && userLevel <= 3)) {
             if (!isProcessed) {
                 actions += `<a href="${baseUrl}/CTrans/ProcessReqWithdraw/${item.kodereq}">
                                 <button class="bg-transparent border-0 text-xs">Withdraw</button>
