@@ -130,7 +130,7 @@
         <div class="modal-content">
           <span id="btnCloseReqTopup" class="close-btn">&times;</span>
           <h5 id="lblKeterangan">Enter a Topup Nominal</h5>
-          <input type="number" id="txtNominal" name="txtNominal" placeholder="Enter value" class="input-field" value=0 min=0>
+          <input type="text" id="txtNominal" name="txtNominal" placeholder="Enter value" class="input-field" value=0 min=0>
           <div id="xKetWD" style="display: none">
             <label for="txtNoref">Keterangan</label>
             <input type="text" id="txtNoref" name="txtNoref" placeholder="Nama Bank - No Rek" class="input-field mt-0">
@@ -177,14 +177,30 @@
       pnlReqTopup.hide();
     });
 
-    $('#txtNominal').on('change', function() {
+    $('#txtNominal').on('input', function() {
       let xvalue = $(this).val().toString();
-      xvalue = xvalue.replace(/[^0-9]/g, '');
-      let intValue = parseInt(xvalue);
-      if (isNaN(intValue)) {
-        intValue = 0;
+      // Remove all non-numeric characters including existing dots (thousands separators)
+      let cleanValue = xvalue.replace(/\./g, '').replace(/[^0-9]/g, '');
+      
+      // Use Number() for more robust conversion and handle empty string
+      let numValue = Number(cleanValue);
+      if (isNaN(numValue) || cleanValue === '') {
+        numValue = 0;
       }
-      $(this).val(intValue);
+      
+      // Format with dot as thousands separator (Indonesian locale)
+      let formattedValue = numValue.toLocaleString('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      });
+      $(this).val(formattedValue);
+    });
+
+    // Clean the value before form submission
+    $('#frmReqTopup').on('submit', function() {
+      let nominalInput = $('#txtNominal');
+      let cleanValue = nominalInput.val().replace(/\./g, ''); // Remove dots (thousands separators)
+      nominalInput.val(cleanValue);
     });
 
   });
