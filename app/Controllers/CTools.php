@@ -107,7 +107,7 @@ class CTools extends Controller
 
         $str = "SELECT IFNULL(SUM(amount), 0) AS amount FROM tsaldo WHERE iduser = '{$id}'";
         $qSaldo = $qry->usefirst($str);
-        $str = "SELECT username, level, cashback, idatasan, komisi, maxcashback FROM tuser WHERE id = '{$id}'";
+        $str = "SELECT u.username, u.level, u.cashback, u.idatasan, u.komisi, u.maxcashback, u.kodebank, u.norek, u.namarek, b.nama as namabank FROM tuser u LEFT JOIN tbank b ON u.kodebank = b.kode WHERE u.id = '{$id}'";
         $qUser = $qry->usefirst($str);
         $qUser->Saldo = (float) $qSaldo->amount;
         $qUser->LevelString = ($qUser->level == 1 ? "Maintenance" : ($qUser->level == 2 ? "Admin" : ($qUser->level == 3 ? "Kasir" : ($qUser->level == 4  ? "Agent" : ($qUser->level == 5  ? "VIP" : "Unknown Level")))));

@@ -105,6 +105,9 @@
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Saldo</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">CashBack</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Komisi</th>
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Bank</th>
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">No. Rek</th>
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nama Rek</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"></th>
                                         </tr>
                                     </thead>
@@ -120,6 +123,9 @@
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= number_format($q->saldo, '2', ',', '.') ?></td>
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->cashback ?>%</td>
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->komisi ?>%</td>
+                                                <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->namabank ?: '-' ?></td>
+                                                <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->norek ?: '-' ?></td>
+                                                <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->namarek ?: '-' ?></td>
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                                                     <button onclick="ShowDetail(<?= $q->id  ?>)" class="btn btn-outline-primary text-xxs p-2" <?= ((int)session('level') >= (int) $q->level ? 'disabled' : '') ?>>Detail User</button>
                                                     <?php if (!($q->level >= 1 && $q->level <= 3)) { ?>
@@ -220,6 +226,34 @@
                     <div class="col-6">
                         <label id="lblMaxCashback" for="txtMaxCashback">Max Cashback <span>%</span></label>
                         <input type="number" id="txtMaxCashback" name="txtMaxCashback" class="form-control mb-2 w-100" val="0" step="any">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <label for="selBankDetail" class="form-label">Nama Bank</label>
+                        <select name="selBankDetail" id="selBankDetail" class="form-control mb-2">
+                            <option value="">-- Pilih Bank --</option>
+                            <?php if (isset($banks) && is_array($banks)): ?>
+                                <?php foreach ($banks as $bank): ?>
+                                    <option value="<?= $bank['kode'] ?>"><?= $bank['nama'] ?></option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <label for="txtNoRekDetail" class="form-label">No. Rekening</label>
+                        <input type="text" name="txtNoRekDetail" id="txtNoRekDetail" class="form-control mb-2" placeholder="No. Rekening" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <label for="txtNamaRekDetail" class="form-label">Nama Rekening</label>
+                        <input type="text" name="txtNamaRekDetail" id="txtNamaRekDetail" class="form-control mb-2" placeholder="Nama Rekening" />
                     </div>
                 </div>
 
@@ -446,6 +480,11 @@
                 $('#txtCashback').val(qData.cashback);
                 $('#txtKomisi').val(qData.komisi);
                 $('#txtMaxCashback').val(qData.maxcashback);
+                
+                // Update bank information fields
+                $('#selBankDetail').val(qData.kodebank); // Assuming qData.kodebank holds the bank code
+                $('#txtNoRekDetail').val(qData.norek);
+                $('#txtNamaRekDetail').val(qData.namarek);
                 if (qData.level == "4" && (myLevel >= 1 && myLevel <= 3)) {
                     $('#pnlKomisi').css('display', 'flex')
                     $('#cardHeight').css('height', '400px')

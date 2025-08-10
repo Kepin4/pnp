@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use CodeIgniter\Controller;
 use App\Models\Base_model;
+use App\Models\Bank_model;
 use App\Libraries\func;
 use DateTime;
 use stdClass;
@@ -22,7 +23,7 @@ class CData extends Controller
         $myLevel = session('level');
         $myID = session('idUser');
         $whrLevel = ($myLevel == 1 ? "" : ($myLevel == 4 ? "WHERE idatasan = '{$myID}'" : "WHERE level > '$myLevel' "));
-        $str = "SELECT id, username, level, cashback, idatasan, komisi, status FROM tuser $whrLevel ORDER BY status ASC, id ASC ";
+        $str = "SELECT u.id, u.username, u.level, u.cashback, u.idatasan, u.komisi, u.status, u.kodebank, u.norek, u.namarek, b.nama as namabank FROM tuser u LEFT JOIN tbank b ON u.kodebank = b.kode $whrLevel ORDER BY u.status ASC, u.id ASC ";
         $dtUser = $qry->use($str);
 
         $str = "SELECT iduser, SUM(amount) amount FROM tsaldo GROUP BY iduser";
@@ -39,11 +40,21 @@ class CData extends Controller
                 'Atasan' => ($q->idatasan == 0 ? 'NO AGENT' : $f->getUsername($q->idatasan)),
                 'komisi' => $q->komisi,
                 'status' => $q->status,
-                'saldo' => $dtSaldo[$q->id] ?? 0
+                'saldo' => $dtSaldo[$q->id] ?? 0,
+                'kodebank' => $q->kodebank ?? '',
+                'norek' => $q->norek ?? '',
+                'namarek' => $q->namarek ?? '',
+                'namabank' => $q->namabank ?? ''
             ];
         }, $dtUser);
 
-        $data = array('User' => $qBindSaldo,);
+        $bankModel = new Bank_model();
+        $banks = $bankModel->getBanks();
+
+        $data = array(
+            'User' => $qBindSaldo,
+            'banks' => $banks
+        );
         echo view("vHead");
         echo view("vMenu");
         echo view("vUser", $data);
@@ -52,9 +63,14 @@ class CData extends Controller
 
     public function NewUser()
     {
+        $bankModel = new Bank_model();
+        $data = [
+            'banks' => $bankModel->getBanks()
+        ];
+        
         echo view('vHead');
         echo view('vMenu');
-        echo view('vNewUser');
+        echo view('vNewUser', $data);
         echo view('vFooter');
     }
 
@@ -93,6 +109,9 @@ class CData extends Controller
             'idatasan' => $myLevel == 4 ? $myID : 0,
             'komisi' => $dt['txtKomisi'] ?? 0,
             'maxcashback' => $dt['txtMaxCashback'],
+            'kodebank' => $dt['selBank'] ?? '',
+            'norek' => $dt['txtNoRek'] ?? '',
+            'namarek' => $dt['txtNamaRek'] ?? '',
             'status' => 5,
             'inputby' => $myID,
             'inputdate' => $xJam->format('Y-m-d H:i:s')
@@ -137,6 +156,9 @@ class CData extends Controller
             'idatasan' => $myLevel == 4 ? $myID : 0,
             'komisi' => $dt['txtKomisi'] ?? 0,
             'maxcashback' => $dt['txtMaxCashback'],
+            'kodebank' => $dt['selBankDetail'] ?? '',
+            'norek' => $dt['txtNoRekDetail'] ?? '',
+            'namarek' => $dt['txtNamaRekDetail'] ?? '',
             'status' => 5,
             'inputby' => $myID,
             'inputdate' => $xJam->format('Y-m-d H:i:s'),
@@ -190,5 +212,43 @@ class CData extends Controller
     {
         session()->setflashdata('alert', '5|Berhasil Update Password User!');
         return redirect()->to('../CData/User');
+    }
+
+    public function SaveBank()
+    {
+        $myLevel = session('level');
+        if (!($myLevel >= 1 && $myLevel <= 4)) {
+            return json_encode(['status' => 403, 'message' => 'Unauthorized User, ADMIN only!']);
+        }
+
+        $dt = $this->request->getPost();
+        $namaBank = $dt['namaBank'] ?? '';
+
+        if (!$namaBank) {
+            return json_encode(['status' => 400, 'message' => 'Nama Bank is required!']);
+        }
+
+        $bankModel = new Bank_model();
+        
+        // Check if bank already exists
+        $existingBank = $bankModel->where('nama', $namaBank)->first();
+        if ($existingBank) {
+            return json_encode(['status' => 400, 'message' => 'Bank already exists!']);
+        }
+
+        $result = $bankModel->insertBank($namaBank);
+        
+        if ($result['success']) {
+            return json_encode([
+                'status' => 200, 
+                'message' => 'Bank added successfully!',
+                'data' => [
+                    'kode' => $result['kode'],
+                    'nama' => $namaBank
+                ]
+            ]);
+        } else {
+            return json_encode(['status' => 500, 'message' => 'Failed to add bank!']);
+        }
     }
 }

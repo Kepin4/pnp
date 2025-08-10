@@ -63,6 +63,38 @@
                                 </select>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="selBank" class="form-label">Nama Bank</label>
+                                <select name="selBank" id="selBank" class="form-control">
+                                    <option value="">-- Pilih Bank --</option>
+                                    <?php if (isset($banks) && is_array($banks)): ?>
+                                        <?php foreach ($banks as $bank): ?>
+                                            <option value="<?= $bank['kode'] ?>"><?= $bank['nama'] ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                    <option value="add_new">+ Tambah Bank Baru</option>
+                                </select>
+                            </div>
+
+                            <div id="pnlNewBank" class="mb-3" style="display: none;">
+                                <label for="txtNewBank" class="form-label">Nama Bank Baru</label>
+                                <div class="input-group">
+                                    <input type="text" id="txtNewBank" class="form-control" placeholder="Masukkan nama bank baru" />
+                                    <button type="button" id="btnSaveBank" class="btn btn-primary">Simpan</button>
+                                    <button type="button" id="btnCancelBank" class="btn btn-secondary">Batal</button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="txtNoRek" class="form-label">No. Rekening</label>
+                                <input type="text" name="txtNoRek" id="txtNoRek" class="form-control" placeholder="No. Rekening" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="txtNamaRek" class="form-label">Nama Rekening</label>
+                                <input type="text" name="txtNamaRek" id="txtNamaRek" class="form-control" placeholder="Nama Rekening" />
+                            </div>
+
                             <div class="row pl-3">
                                 <div class="mb-3 col-lg-2 pl-0">
                                     <label for="txtCashback" class="form-label">Cashback (%)</label>
@@ -138,4 +170,67 @@
         }
 
     })
+
+    // Bank selection handling
+    $('#selBank').on('change', function() {
+        if ($(this).val() == 'add_new') {
+            $('#pnlNewBank').show();
+            $(this).prop('disabled', true);
+        }
+    });
+
+    // Cancel new bank
+    $('#btnCancelBank').on('click', function() {
+        $('#selBank').val('').prop('disabled', false);
+        $('#pnlNewBank').hide();
+        $('#txtNewBank').val('');
+    });
+
+    // Save new bank
+    $('#btnSaveBank').on('click', function() {
+        const namaBank = $('#txtNewBank').val().trim();
+        if (!namaBank) {
+            alert('Nama bank tidak boleh kosong!');
+            return;
+        }
+
+        $.ajax({
+            url: '<?= base_url('../CData/SaveBank') ?>',
+            type: 'POST',
+            data: { namaBank: namaBank },
+            dataType: 'json',
+            beforeSend: function() {
+                $('#btnSaveBank').prop('disabled', true).text('Menyimpan...');
+            },
+            success: function(response) {
+                if (response.status == 200) {
+                    // Add new option to select
+                    const newOption = `<option value="${response.data.kode}" selected>${response.data.nama}</option>`;
+                    $('#selBank option[value="add_new"]').before(newOption);
+                    
+                    // Reset form
+                    $('#selBank').val(response.data.kode).prop('disabled', false);
+                    $('#pnlNewBank').hide();
+                    $('#txtNewBank').val('');
+                    
+                    alert('Bank berhasil ditambahkan!');
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Terjadi kesalahan saat menyimpan bank!');
+            },
+            complete: function() {
+                $('#btnSaveBank').prop('disabled', false).text('Simpan');
+            }
+        });
+    });
+
+    // Allow Enter key to save bank
+    $('#txtNewBank').on('keypress', function(e) {
+        if (e.which == 13) {
+            $('#btnSaveBank').click();
+        }
+    });
 </script>
