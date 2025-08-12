@@ -187,6 +187,7 @@
                                                 <select name="status" class="form-control filter-input">
                                                     <option value="">All Statuses</option>
                                                     <option value="1">Pending</option>
+                                                    <option value="4">Outstanding payment</option>
                                                     <option value="5">Approved</option>
                                                     <option value="8">Rejected</option>
                                                 </select>
@@ -249,6 +250,8 @@
                                             <th>Kode Request</th>
                                             <th>Member</th>
                                             <th>Amount</th>
+                                            <th>Paid Amount</th>
+                                            <th>Remaining Balance</th>
                                             <th>Date</th>
                                             <th>Status</th>
                                             <th>Topup By</th>
@@ -286,7 +289,7 @@
             info: false,
             ordering: true,
             columnDefs: [
-                { orderable: false, targets: [9] } // Actions column
+                { orderable: false, targets: [11] } // Actions column
             ]
         });
 
@@ -349,7 +352,7 @@
         if (data.length === 0) {
             $('#topup-requests-body').html(`
                 <tr>
-                    <td colspan="10" class="empty-state">
+                    <td colspan="12" class="empty-state">
                         <i class="fas fa-inbox"></i>
                         <h5>No data found</h5>
                         <p>Try adjusting your filters to see more results.</p>
@@ -361,11 +364,16 @@
 
         // Add rows to DataTable
         data.forEach(function(item, index) {
+            const paidAmount = item.paid_amount || 0;
+            const remainingBalance = (item.amount || 0) - paidAmount;
+            
             const row = [
                 index + 1,
                 item.kodereq,
                 item.username,
                 formatAmount(item.amount),
+                formatAmount(paidAmount),
+                formatAmount(remainingBalance),
                 formatDate(item.tanggal),
                 renderStatus(item.status),
                 item.topup_by || '',
@@ -387,6 +395,11 @@
                 btnClass = 'btn-secondary';
                 icon = 'fas fa-clock';
                 statusText = 'Pending';
+                break;
+            case 4:
+                btnClass = 'btn-warning';
+                icon = 'fas fa-hourglass-half';
+                statusText = 'Outstanding payment';
                 break;
             case 5:
                 btnClass = 'btn-success';
@@ -440,6 +453,8 @@
             <tr>
                 <th class="text-center" colspan="3">Total</th>
                 <th class="text-right">${formatAmount(summary.total_amount || 0)}</th>
+                <th class="text-right">${formatAmount(summary.total_paid || 0)}</th>
+                <th class="text-right">${formatAmount((summary.total_amount || 0) - (summary.total_paid || 0))}</th>
                 <th colspan="6"></th>
             </tr>
         `;

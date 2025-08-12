@@ -484,7 +484,7 @@ class CTrans extends Controller
         }
 
         $qry = new Base_model();
-        $str = "SELECT id, iduser, amount FROM treqtopup WHERE kodereq = '{$xKodeReq}' AND status = 1";
+        $str = "SELECT id, iduser, amount FROM treqtopup WHERE kodereq = '{$xKodeReq}' AND (status = 1 OR status = 4)";
         $dtReqTopup = $qry->use($str);
         $ReqTopup = reset($dtReqTopup);
 
@@ -511,7 +511,7 @@ class CTrans extends Controller
 
         echo view("vHead");
         echo view("vMenu");
-        echo view("vNewTrans", $data);
+        echo view("vNewTopupTrans", $data);
         echo view("vFooter");
     }
 
@@ -614,9 +614,23 @@ class CTrans extends Controller
         }
 
         session()->setFlashdata('cache', (object) array('dtStart' => $dtStart, 'dtEnd' => $dtEnd, 'chkRequest' => $chkRequest));
-        $str = "SELECT r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate FROM treqtopup r INNER JOIN tuser u ON r.iduser = u.id WHERE date(tanggal) BETWEEN '$dtStart' AND '$dtEnd' {$xWhr} ORDER BY r.id DESC";
+        $str = "SELECT r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate, 
+                       COALESCE(SUM(t.amount), 0) as paid_amount
+                FROM treqtopup r 
+                INNER JOIN tuser u ON r.iduser = u.id 
+                LEFT JOIN ttrans t ON r.kodereq = t.noref AND t.jenistrans = 1 AND t.status = 5
+                WHERE date(r.tanggal) BETWEEN '$dtStart' AND '$dtEnd' {$xWhr} 
+                GROUP BY r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate
+                ORDER BY r.id DESC";
         if ($chkRequest) {
-            $str = "SELECT r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate FROM treqtopup r INNER JOIN tuser u ON r.iduser = u.id WHERE r.status = 1 {$xWhr} ORDER BY r.id DESC";
+            $str = "SELECT r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate,
+                           COALESCE(SUM(t.amount), 0) as paid_amount
+                    FROM treqtopup r 
+                    INNER JOIN tuser u ON r.iduser = u.id 
+                    LEFT JOIN ttrans t ON r.kodereq = t.noref AND t.jenistrans = 1 AND t.status = 5
+                    WHERE r.status = 1 {$xWhr} 
+                    GROUP BY r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate
+                    ORDER BY r.id DESC";
         }
         $data['dtReqTopup'] = $qry->use($str);
         echo view('vHead');
@@ -658,6 +672,7 @@ class CTrans extends Controller
         try {
             // Build the main query
             $str = "SELECT r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate,
+                           COALESCE(SUM(t.amount), 0) as paid_amount,
                            CASE 
                                WHEN r.status = 5 THEN (SELECT username FROM tuser WHERE id = r.updateby)
                                ELSE ''
@@ -672,6 +687,7 @@ class CTrans extends Controller
                            END as update_time
                     FROM treqtopup r 
                     INNER JOIN tuser u ON r.iduser = u.id 
+                    LEFT JOIN ttrans t ON r.kodereq = t.noref AND t.jenistrans = 1 AND t.status = 5
                     WHERE 1=1 {$xWhr} {$statusWhr}";
 
             // Apply date or request filter
@@ -681,7 +697,7 @@ class CTrans extends Controller
                 $str .= " AND date(r.tanggal) BETWEEN '{$dtStart}' AND '{$dtEnd}'";
             }
 
-            $str .= " ORDER BY r.id DESC";
+            $str .= " GROUP BY r.kodereq, u.username, r.iduser, r.amount, r.tanggal, r.status, r.updateby, r.updatedate ORDER BY r.id DESC";
 
             $dtReqTopup = $qry->use($str);
 
@@ -1521,5 +1537,134 @@ class CTrans extends Controller
         echo view('vMenu');
         echo view('vDetailPlacement', $data);
         echo view('vFooter');
+    }
+
+    public function SaveMultiPaymentTopUp()
+    {
+        if (!session()->has('AllowSave')) {
+            session()->setFlashdata('alert', "3|Terjadi Kesalahan, Silahkan Coba lagi!");
+            return redirect()->to('/CTrans/NewTransaction');
+        }
+        session()->remove('AllowSave');
+
+        if (!(session('level') >= 1 && session('level') <= 3)) {
+            session()->setflashdata('alert', '3|Unauthorized User, ADMIN only!');
+            return redirect()->to('/CData/User');
+        }
+
+        $qry = new Base_model;
+        $xJam = new DateTime($qry->getWaktu());
+        $myID = session('idUser');
+        $IDAccount = session('cache')['idUser'] ?? 0;
+        $IDJenisTrans = session('cache')['JenisTrans'] ?? 1;
+        $Keterangan = $this->request->getPost("txtDesc");
+        $xKodeReq = $this->request->getPost("txtKodeReq");
+        $totalTopupAmount = $this->request->getPost("txtTotalTopupAmount");
+        
+        // Get payment arrays
+        $paymentMethods = $this->request->getPost("payment_method");
+        $paymentAmounts = $this->request->getPost("payment_amount");
+
+        if (empty($paymentMethods) || empty($paymentAmounts)) {
+            session()->setFlashdata('alert', "3|Payment details are required!");
+            return redirect()->to('/CTrans/NewTransaction');
+        }
+
+        // Calculate total paid amount
+        $totalPaidAmount = array_sum($paymentAmounts);
+
+        $qry->db->transStart();
+
+        // Create individual transactions for each payment
+        $allTransSuccess = true;
+        foreach ($paymentMethods as $index => $paymentMethod) {
+            $amount = $paymentAmounts[$index];
+            if ($amount <= 0) continue;
+
+            $dtJenisTrans = $qry->usefirst("SELECT kodedepan, ismin FROM tjenistrans WHERE id = {$IDJenisTrans}");
+            $KodeDepan = $dtJenisTrans->kodedepan ?? '';
+            $xIsMin = (bool) $dtJenisTrans->ismin ?? false;
+            $finalAmount = $amount * ($xIsMin ? -1 : 1);
+
+            $Notrans = func::getKey("ttrans", "notrans", $KodeDepan, $xJam, true, true);
+            $paymentMethodName = $this->getPaymentMethodName($paymentMethod);
+            
+            $dtTrans = array(
+                'notrans' => $Notrans,
+                'noref' => $xKodeReq,
+                'jenistrans' => $IDJenisTrans,
+                'iduser' => $IDAccount,
+                'tanggal' => $xJam->format('Y-m-d H:i:s'),
+                'keterangan' => $Keterangan . " - " . $paymentMethodName,
+                'amount' => $finalAmount,
+                'total' => $amount,
+                'status' => 5,
+                'inputby' => $myID,
+                'inputdate' => $xJam->format('Y-m-d H:i:s')
+            );
+
+            $rslt = $qry->ins("ttrans", $dtTrans);
+            if (!$rslt) {
+                $allTransSuccess = false;
+                break;
+            }
+
+            $rslt = $qry->ins("tsaldo",  array(
+                'notrans' => $Notrans,
+                'tanggal' => $xJam->format('Y-m-d H:i:s'),
+                'iduser' => $IDAccount,
+                'amount' => $finalAmount,
+                'inputby' => $myID,
+                'inputdate' =>  $xJam->format('Y-m-d H:i:s')
+            ));
+            if (!$rslt) {
+                $allTransSuccess = false;
+                break;
+            }
+        }
+
+        if (!$allTransSuccess) {
+            $qry->db->transRollback();
+            session()->setFlashdata('alert', "3|Terjadi Kesalahan, Silahkan Coba lagi!");
+            return redirect()->to('/CTrans/NewTransaction');
+        }
+
+        // Update request status based on payment completion
+        if ($xKodeReq != "") {
+            $newStatus = ($totalPaidAmount >= $totalTopupAmount) ? 5 : 4;
+            
+            if ($IDJenisTrans == 1) {
+                $rslt = $qry->upd("treqtopup", array('status' => $newStatus, 'updateby' => $myID, 'updatedate' => $xJam->format('Y-m-d H:i:s')), array('kodereq' => $xKodeReq));
+            } elseif ($IDJenisTrans == 4) {
+                $rslt = $qry->upd("treqwithdraw", array('status' => $newStatus, 'updateby' => $myID, 'updatedate' => $xJam->format('Y-m-d H:i:s')), array('kodereq' => $xKodeReq));
+            }
+
+            if (!$rslt) {
+                $qry->db->transRollback();
+                session()->setFlashdata('alert', "3|Terjadi Kesalahan, Silahkan Coba lagi!");
+                return redirect()->to('/CTrans/NewTransaction');
+            }
+        }
+
+        $qry->db->transComplete();
+        if ($qry->db->transStatus() === FALSE) {
+            $qry->db->transRollback();
+            session()->setFlashdata('alert', "3|Terjadi Kesalahan, Silahkan Coba lagi!");
+            return redirect()->to('/CTrans/NewTransaction');
+        }
+
+        $statusMessage = ($totalPaidAmount >= $totalTopupAmount) ? "Completed" : "Partial Payment";
+        session()->setFlashdata('alert', "5|Berhasil Menambahkan Multi-Payment Topup - {$statusMessage}!");
+        return redirect()->to('/CTrans/TransactionSuccess');
+    }
+
+    private function getPaymentMethodName($methodId)
+    {
+        switch ($methodId) {
+            case 1: return "Cash";
+            case 2: return "Bank Transfer";
+            case 3: return "E-Wallet";
+            default: return "Unknown";
+        }
     }
 }
