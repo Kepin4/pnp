@@ -133,7 +133,7 @@
           <input type="text" id="txtNominal" name="txtNominal" placeholder="Enter value" class="input-field" value=0 min=0>
           <div id="xKetWD" style="display: none">
             <label for="txtNoref">Keterangan</label>
-            <input type="text" id="txtNoref" name="txtNoref" placeholder="Nama Bank - No Rek" class="input-field mt-0">
+            <input type="text" id="txtNoref" name="txtNoref" placeholder="Nama Bank - No Rek" class="input-field mt-0" value="<?= session('namaBank') ?? '' ?> - <?= session('noRek') ?? '' ?> - <?= session('namaRek') ?? '' ?>">
           </div>
           <button class="btn btn-outline-primary w-503" style="align-self : flex-end;">Submit</button>
         </div>

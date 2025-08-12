@@ -688,7 +688,7 @@ class CTrans extends Controller
             // Calculate summary
             $totalAmount = 0;
             if (!empty($dtReqTopup)) {
-                $approvedRequests = array_filter($dtReqTopup, function($item) {
+                $approvedRequests = array_filter($dtReqTopup, function ($item) {
                     return $item->status == 5;
                 });
                 $totalAmount = array_sum(array_column($approvedRequests, 'amount'));
@@ -705,7 +705,6 @@ class CTrans extends Controller
             ];
 
             return $this->response->setJSON($response);
-
         } catch (Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
@@ -777,7 +776,7 @@ class CTrans extends Controller
             // Calculate summary
             $totalAmount = 0;
             if (!empty($dtReqWithdraw)) {
-                $approvedRequests = array_filter($dtReqWithdraw, function($item) {
+                $approvedRequests = array_filter($dtReqWithdraw, function ($item) {
                     return $item->status == 5;
                 });
                 $totalAmount = array_sum(array_column($approvedRequests, 'amount'));
@@ -794,7 +793,6 @@ class CTrans extends Controller
             ];
 
             return $this->response->setJSON($response);
-
         } catch (Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
@@ -1157,7 +1155,7 @@ class CTrans extends Controller
                 $str = "SELECT id, username, level, idatasan FROM tuser WHERE status = 5 AND level = 5 AND idatasan = '$q->id'";
                 $dtUserB = $qry->use($str);
 
-                $test = array();
+                $qNominalPlayD = 0;
                 foreach ($dtUserB as $q2) {
                     $tPlacementD = array_filter($dtPlacement, function ($x) use ($q2) {
                         return $x->iduser == $q2->id;
@@ -1224,6 +1222,7 @@ class CTrans extends Controller
             $str = "SELECT id, username, level, idatasan FROM tuser WHERE status = 5 AND level = 5 AND idatasan = 0";
             $dtUserB = $qry->use($str);
 
+            $qNominalPlayD = 0;
             foreach ($dtUserB as $q2) {
                 $tPlacementD = array_filter($dtPlacement, function ($x) use ($q2) {
                     return $x->iduser == $q2->id;

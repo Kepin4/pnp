@@ -22,8 +22,8 @@ class CData extends Controller
 
         $myLevel = session('level');
         $myID = session('idUser');
-        $whrLevel = ($myLevel == 1 ? "" : ($myLevel == 4 ? "WHERE idatasan = '{$myID}'" : "WHERE level > '$myLevel' "));
-        $str = "SELECT u.id, u.username, u.level, u.cashback, u.idatasan, u.komisi, u.status, u.kodebank, u.norek, u.namarek, b.nama as namabank FROM tuser u LEFT JOIN tbank b ON u.kodebank = b.kode $whrLevel ORDER BY u.status ASC, u.id ASC ";
+        $whrLevel = ($myLevel == 1 ? "" : ($myLevel == 4 ? "AND idatasan = '{$myID}'" : "AND level > '$myLevel' "));
+        $str = "SELECT u.id, u.username, u.level, u.cashback, u.idatasan, u.komisi, u.status, u.kodebank, u.norek, u.namarek, b.nama as namabank FROM tuser u LEFT JOIN tbank b ON u.kodebank = b.kode WHERE u.level <> 1 $whrLevel ORDER BY u.status ASC, u.id ASC ";
         $dtUser = $qry->use($str);
 
         $str = "SELECT iduser, SUM(amount) amount FROM tsaldo GROUP BY iduser";

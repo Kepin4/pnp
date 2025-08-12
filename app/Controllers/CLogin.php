@@ -72,11 +72,20 @@ class CLogin extends Controller
         }
 
         $User = reset($dtUser);
+        
+        $namaBank = '';
+        if ($User->kodebank) {
+            $Bank = $qry->sel('tbank', ['kode' => $User->kodebank])[0];
+            $namaBank = $Bank->nama;
+        }
         session()->set('idUser', $User->id);
         session()->set('username', $User->username);
         session()->set('level', $User->level);
         session()->set('cashback', $User->cashback / 100);
         session()->set('maxCashback', $User->maxcashback);
+        session()->set('namaBank', $namaBank);
+        session()->set('noRek', $User->norek);
+        session()->set('namaRek', $User->namarek);
         return redirect()->to('../CBase');
     }
 }
