@@ -160,6 +160,9 @@ class CPlay extends Controller
         $idSesi = $dtJamSelesai->id;
         $idShift = $dtJamSelesai->idshift;
 
+        $str = "SELECT inputdate FROM tshift WHERE id = {$idShift};";
+        $tglPeriode = new DateTime($qry->usefirst($str)->inputdate ?? $xJam);
+
         $dtPlacement = array_filter($xVal, function ($x) {
             return $x->Nominal !== 0;
         });
@@ -250,6 +253,7 @@ class CPlay extends Controller
             'jenistrans' => 3,
             'iduser' => $myID,
             'tanggal' => $xJam->format('Y-m-d H:i:s'),
+            'tanggalperiode' => $tglPeriode->format('Y-m-d H:i:s'),
             'keterangan' => 'Placement',
             'amount' => $Total * -1,
             'cashback' => 0,

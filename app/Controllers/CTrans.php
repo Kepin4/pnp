@@ -1058,7 +1058,7 @@ class CTrans extends Controller
         $dtPlacement = $qry->use($str);
 
         $dtData = [];
-        $str = "SELECT notrans, tanggal, iduser, amount FROM ttrans WHERE jenistrans = 3 {$whr} AND date(tanggal) BETWEEN '{$dtStart}' AND '{$dtEnd}' AND status = 5 ORDER BY id DESC";
+        $str = "SELECT notrans, tanggal, iduser, amount FROM ttrans WHERE jenistrans = 3 {$whr} AND date(tanggalperiode) BETWEEN '{$dtStart}' AND '{$dtEnd}' AND status = 5 ORDER BY id DESC";
         foreach ($qry->use($str) as $q) {
             $obj = new stdClass;
             $obj->notrans = $q->notrans;
