@@ -1,0 +1,1 @@
+ALTER TABLE ttrans ADD COLUMN tanggalperiode datetime NOT NULL DEFAULT '0001-01-01 00:00:01' AFTER tanggal;

@@ -214,4 +214,19 @@ class CTools extends Controller
 
         return $randomString;
     }
+
+    function runMigrations($version)
+    {
+        $filePath = APPPATH . "SQLQuery/v" . intval($version) . ".sql";
+        if (!file_exists($filePath)) {
+            return "Migration file not found: " . $filePath;
+        }
+        $queryContent = file_get_contents($filePath);
+        if ($queryContent === false) {
+            return "Failed to read migration file: " . $filePath;
+        }
+
+        $qry = new Base_model();
+        return $qry->exec($queryContent);
+    }
 }
