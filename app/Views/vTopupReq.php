@@ -428,12 +428,19 @@
         
         // Check user level permissions
         if ((userLevel >= 1 && userLevel <= 3)) {
-            if (!isProcessed) {
+            if (item.status == 1) {
                 actions += `<a href="${baseUrl}/CTrans/ProcessReqTopup/${item.kodereq}">
                                 <button class="bg-transparent border-0 text-xs">TopUp</button>
                             </a> | 
                             <a href="${baseUrl}/CTrans/RefuseReqTopup/${item.kodereq}">
                                 <button class="bg-transparent border-0 text-xs">Refuse</button>
+                            </a>`;
+            } else if (item.status == 4) {
+                actions += `<a href="${baseUrl}/CTrans/ProcessReqTopup/${item.kodereq}">
+                                <button class="bg-transparent border-0 text-xs">TopUp</button>
+                            </a> | 
+                            <a href="${baseUrl}/CTrans/DetailTransactionRef/${item.kodereq}">
+                                <button class="bg-transparent border-0 text-xs">Detail</button>
                             </a>`;
             }
         }
@@ -449,12 +456,16 @@
     }
 
     function renderSummary(summary) {
+        const totalAmount = summary.total_amount || 0;
+        const totalPaid = summary.total_paid || 0;
+        const remainingBalance = totalAmount - totalPaid;
+        
         const summaryHtml = `
             <tr>
                 <th class="text-center" colspan="3">Total</th>
-                <th class="text-right">${formatAmount(summary.total_amount || 0)}</th>
-                <th class="text-right">${formatAmount(summary.total_paid || 0)}</th>
-                <th class="text-right">${formatAmount((summary.total_amount || 0) - (summary.total_paid || 0))}</th>
+                <th class="text-right">${formatAmount(totalAmount)}</th>
+                <th class="text-right">${formatAmount(totalPaid)}</th>
+                <th class="text-right">${formatAmount(remainingBalance)}</th>
                 <th colspan="6"></th>
             </tr>
         `;

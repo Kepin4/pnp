@@ -38,7 +38,17 @@
 
         <div class="container-fluid py-4">
             <div class="card p-4">
-                <h4><?= $qTrns->notrans ?></h4>
+                <?php 
+                // Check if we have multiple transaction numbers from session
+                $multiNotrans = session()->getFlashdata('multi_notrans');
+                if ($multiNotrans) {
+                    // Display multiple transaction numbers
+                    echo '<h4>' . $multiNotrans . '</h4>';
+                } else {
+                    // Display single transaction number
+                    echo '<h4>' . $qTrns->notrans . '</h4>';
+                }
+                ?>
                 <?php if (!$qTrns->noref == '') { ?>
                     <tr>
                         <td style="font-weight: bold;">No Referensi</td>

@@ -323,7 +323,22 @@ class CTrans extends Controller
             }
         }
 
-        $str = "SELECT amount FROM tsaldo WHERE notrans = '{$xNotrans}'";
+        // Handle multiple notrans for JenisTrans = 1 (Topup)
+        if ($dtTrans->jenistrans == 1) {
+            // Get all notrans with the same noref (for multi-payment topups)
+            $str = "SELECT notrans FROM ttrans WHERE noref = (SELECT noref FROM ttrans WHERE notrans = '{$xNotrans}') AND jenistrans = 1 AND status = 5";
+            $allNotrans = $qry->use($str);
+            
+            if (!empty($allNotrans)) {
+                $notransList = array_column($allNotrans, 'notrans');
+                $notransString = "'" . implode("','", $notransList) . "'";
+                $str = "SELECT amount FROM tsaldo WHERE notrans IN ({$notransString})";
+            } else {
+                $str = "SELECT amount FROM tsaldo WHERE notrans = '{$xNotrans}'";
+            }
+        } else {
+            $str = "SELECT amount FROM tsaldo WHERE notrans = '{$xNotrans}'";
+        }
         $dtSaldo = $qry->use($str);
 
         $str = "SELECT status FROM tplacement WHERE notrans = '{$xNotrans}'";
@@ -352,14 +367,23 @@ class CTrans extends Controller
     public function DetailTransactionRef($xNoref)
     {
         $qry = new Base_model();
-        $str = "SELECT notrans FROM ttrans WHERE noref = '{$xNoref}';";
-        $dtTrans = $qry->usefirst($str);
-        if (!$dtTrans) {
+        $str = "SELECT notrans FROM ttrans WHERE noref = '{$xNoref}' ORDER BY id ASC;";
+        $dtTrans = $qry->use($str);
+        if (empty($dtTrans)) {
             session()->setFlashdata('alert', "3|Data Transaksi tidak ditemukan!");
             return redirect()->to('/CTrans/Transaction');
         }
 
-        return redirect()->to('../CTrans/DetailTransaction/' . $dtTrans->notrans);
+        // Get all transaction numbers for this reference
+        $allNotrans = array_column($dtTrans, 'notrans');
+        $notransString = implode(',', $allNotrans);
+        
+        // Store the transaction numbers in session for the detail view
+        session()->setFlashdata('multi_notrans', $notransString);
+
+        // Use the first transaction for the detail view
+        $firstNotrans = $dtTrans[0]->notrans;
+        return redirect()->to('../CTrans/DetailTransaction/' . $firstNotrans);
     }
 
     public function RequestTopUp()
@@ -484,7 +508,12 @@ class CTrans extends Controller
         }
 
         $qry = new Base_model();
-        $str = "SELECT id, iduser, amount FROM treqtopup WHERE kodereq = '{$xKodeReq}' AND (status = 1 OR status = 4)";
+        // Get topup request with paid amount from database
+        $str = "SELECT r.id, r.iduser, r.amount, COALESCE(SUM(t.amount), 0) as paid_amount
+                FROM treqtopup r 
+                LEFT JOIN ttrans t ON r.kodereq = t.noref AND t.jenistrans = 1 AND t.status = 5
+                WHERE r.kodereq = '{$xKodeReq}' AND (r.status = 1 OR r.status = 4)
+                GROUP BY r.id, r.iduser, r.amount";
         $dtReqTopup = $qry->use($str);
         $ReqTopup = reset($dtReqTopup);
 
@@ -499,6 +528,7 @@ class CTrans extends Controller
             'JenisTrans' => 1,
             'KodeReq' => $xKodeReq,
             'Nominal' => $ReqTopup->amount,
+            'PaidAmount' => $ReqTopup->paid_amount,
         );
         session()->setFlashdata('cache',  $dtCache);
 
@@ -703,11 +733,10 @@ class CTrans extends Controller
 
             // Calculate summary
             $totalAmount = 0;
+            $totalPaid = 0;
             if (!empty($dtReqTopup)) {
-                $approvedRequests = array_filter($dtReqTopup, function ($item) {
-                    return $item->status == 5;
-                });
-                $totalAmount = array_sum(array_column($approvedRequests, 'amount'));
+                $totalAmount = array_sum(array_column($dtReqTopup, 'amount'));
+                $totalPaid = array_sum(array_column($dtReqTopup, 'paid_amount'));
             }
 
             // Prepare response
@@ -716,6 +745,7 @@ class CTrans extends Controller
                 'data' => $dtReqTopup,
                 'summary' => [
                     'total_amount' => $totalAmount,
+                    'total_paid' => $totalPaid,
                     'total_records' => count($dtReqTopup)
                 ]
             ];
@@ -1570,8 +1600,18 @@ class CTrans extends Controller
             return redirect()->to('/CTrans/NewTransaction');
         }
 
-        // Calculate total paid amount
-        $totalPaidAmount = array_sum($paymentAmounts);
+        // Calculate total paid amount (new payments only)
+        $newPaymentAmount = array_sum($paymentAmounts);
+        
+        // Get existing paid amount from database
+        $str = "SELECT COALESCE(SUM(t.amount), 0) as existing_paid
+                FROM ttrans t 
+                WHERE t.noref = '{$xKodeReq}' AND t.jenistrans = 1 AND t.status = 5";
+        $existingPaidResult = $qry->usefirst($str);
+        $existingPaidAmount = $existingPaidResult->existing_paid ?? 0;
+        
+        // Total paid amount = existing + new payments
+        $totalPaidAmount = $existingPaidAmount + $newPaymentAmount;
 
         $qry->db->transStart();
 

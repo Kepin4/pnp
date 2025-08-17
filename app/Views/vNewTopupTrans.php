@@ -65,6 +65,7 @@
                         <form action="<?= base_url('../CTrans/SaveMultiPaymentTopUp') ?>" method="post" enctype="multipart/form-data">
                             <input type="hidden" name="txtKodeReq" value="<?= session('cache')['KodeReq'] ?? "" ?>">
                             <input type="hidden" name="txtTotalTopupAmount" id="txtTotalTopupAmount" value="<?= session('cache')['Nominal'] ?? 0 ?>">
+                            <input type="hidden" name="txtExistingPaidAmount" id="txtExistingPaidAmount" value="<?= session('cache')['PaidAmount'] ?? 0 ?>">
                             <div class="mb-3">
                                 <label for="account-select" class="form-label">ID Member</label>
                                 <select id="selAccount" name="selAccount" class="form-select select-supply" autofocus required disabled>
@@ -202,25 +203,37 @@
             calculateTotalPaid();
         }
 
+        function formatAmount(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
         function calculateTotalPaid() {
-            let totalPaid = 0;
+            // Get existing paid amount from database
+            const existingPaidAmount = parseInt($('#txtExistingPaidAmount').val()) || 0;
+            
+            // Calculate new payments being added
+            let newPayments = 0;
             $('.payment-amount').each(function() {
                 let cleanValue = $(this).val().replace(/\./g, '').replace(/[^0-9]/g, '');
-                totalPaid += parseInt(cleanValue) || 0;
+                newPayments += parseInt(cleanValue) || 0;
             });
+            
+            // Total paid = existing payments + new payments
+            const totalPaid = existingPaidAmount + newPayments;
+            
             let formattedTotal = totalPaid.toLocaleString('id-ID', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
             });
             $('#total-paid').val(formattedTotal);
 
-            // Calculate remaining amount
+            // Calculate remaining amount using database-based calculation
             const totalTopupAmount = parseInt($('#txtTotalTopupAmount').val()) || 0;
             const remainingAmount = totalTopupAmount - totalPaid;
-            let formattedRemaining = remainingAmount.toLocaleString('id-ID', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            });
+            let formattedRemaining = formatAmount(remainingAmount);
             
             // Update remaining amount field and styling
             const remainingField = $('#remaining-amount');
@@ -236,9 +249,18 @@
             }
         }
 
-        // Add initial payment row with auto-filled data
-        const initialNominal = <?= (session('cache')['Nominal'] ?? 0) ?> || 0;
-        addPaymentRow(initialNominal, true);
+        // Add initial payment row with remaining amount (total - already paid)
+        const totalNominal = <?= (session('cache')['Nominal'] ?? 0) ?> || 0;
+        const existingPaid = <?= (session('cache')['PaidAmount'] ?? 0) ?> || 0;
+        const remainingAmount = totalNominal - existingPaid;
+        
+        // Only add initial payment row if there's remaining amount
+        if (remainingAmount > 0) {
+            addPaymentRow(remainingAmount, true);
+        } else {
+            // If fully paid, just calculate to show current status
+            calculateTotalPaid();
+        }
 
         $('#add-payment-row').on('click', function() {
             addPaymentRow();
@@ -279,12 +301,18 @@
             });
 
             const totalTopupAmount = parseInt($('#txtTotalTopupAmount').val());
-            let totalPaid = 0;
+            const existingPaidAmount = parseInt($('#txtExistingPaidAmount').val()) || 0;
+            
+            // Calculate new payments being added
+            let newPayments = 0;
             $('.payment-amount').each(function() {
-                totalPaid += parseInt($(this).val()) || 0;
+                newPayments += parseInt($(this).val()) || 0;
             });
+            
+            // Total paid = existing payments + new payments
+            const totalPaid = existingPaidAmount + newPayments;
 
-            if (totalPaid === 0) {
+            if (newPayments === 0) {
                 alert('Please add at least one payment.');
                 e.preventDefault();
                 return;
