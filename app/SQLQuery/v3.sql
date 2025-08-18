@@ -1,0 +1,1 @@
+ALTER TABLE tuser ADD COLUMN limitplacement double DEFAULT 0 AFTER maxcashback;

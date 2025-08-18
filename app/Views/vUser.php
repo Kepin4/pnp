@@ -103,9 +103,10 @@
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Atasan</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Saldo</th>
-                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">CashBack</th>
-                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Komisi</th>
-                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Bank</th>
+                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">CashBack</th>
+                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Komisi</th>
+                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Placement Limit</th>
+                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Bank</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">No. Rek</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nama Rek</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"></th>
@@ -123,6 +124,7 @@
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= number_format($q->saldo, '2', ',', '.') ?></td>
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->cashback ?>%</td>
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->komisi ?>%</td>
+                                                <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= number_format($q->limitplacement ?? 0, '2', ',', '.') ?></td>
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->namabank ?: '-' ?></td>
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->norek ?: '-' ?></td>
                                                 <td class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"><?= $q->namarek ?: '-' ?></td>
@@ -215,6 +217,10 @@
                     <div class="col-6">
                         <label id="lblCashback" for="txtCashback">Cashback <span>%</span></label>
                         <input type="number" id="txtCashback" name="txtCashback" class="form-control mb-2 w-100" val="0" step="any">
+                    </div>
+                    <div class="col-6">
+                        <label id="lblPlacementLimit" for="txtPlacementLimit">Placement Limit</label>
+                        <input type="number" id="txtPlacementLimit" name="txtPlacementLimit" class="form-control mb-2 w-100" val="0" step="any">
                     </div>
                 </div>
 
@@ -480,6 +486,7 @@
                 $('#txtCashback').val(qData.cashback);
                 $('#txtKomisi').val(qData.komisi);
                 $('#txtMaxCashback').val(qData.maxcashback);
+                $('#txtPlacementLimit').val(qData.limitplacement);
                 
                 // Update bank information fields
                 $('#selBankDetail').val(qData.kodebank); // Assuming qData.kodebank holds the bank code

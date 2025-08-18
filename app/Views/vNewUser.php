@@ -103,6 +103,13 @@
                                     </div>
                                 </div>
 
+                                <div class="mb-3 col-lg-2 pl-0">
+                                    <label for="txtPlacementLimit" class="form-label">Placement Limit</label>
+                                    <div class="input-container">
+                                        <input id="txtPlacementLimit" name="txtPlacementLimit" type="text" class="form-control w-50" placeholder="0" value="0" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\..*/g, '$1');" />
+                                    </div>
+                                </div>
+
                                 <div id="pnlMaxCashback" class="mb-3 col-lg-2 pl-0" style="display: none">
                                     <label for="txtMaxCashback" class="form-label"> Max Cashback (%)</label>
                                     <div class="input-container">

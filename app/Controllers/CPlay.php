@@ -172,6 +172,7 @@ class CPlay extends Controller
             session()->setFlashdata('alert', "3|Harap isi Nominal!");
             return redirect()->to('/CPlay/Play');
         }
+
         //Proses Save
         $qry->db->transStart();
 
@@ -194,6 +195,16 @@ class CPlay extends Controller
         $dtRefusePlacement = [];
         $saldoTerpakai = $CTools->getSisaMaxSaldo();
 
+        // Get user's placement limit and current total
+        $str = "SELECT limitplacement FROM tuser WHERE id = $myID";
+        $userLimit = $qry->usefirst($str)->limitplacement ?? 0;
+        
+        // Get current session's total placement for this user
+        $str = "SELECT IFNULL(SUM(total), 0) as currentTotal FROM tplacement WHERE id <> $HeaderID AND idshift = '{$idShift}' AND idsesi = '{$idSesi}' AND iduser = '{$myID}' AND status = 1";
+        $currentTotal = $qry->usefirst($str)->currentTotal ?? 0;
+        
+        $acceptedTotal = 0; // Track accepted placements in this transaction
+
         foreach ($dtPlacement as $q) {
             $dtDetail = array(
                 'idplacement' => $HeaderID,
@@ -212,6 +223,16 @@ class CPlay extends Controller
                 continue;
             }
 
+            // Check individual placement limit
+            if ($userLimit > 0 && ($currentTotal + $acceptedTotal + $q->Nominal) > $userLimit) {
+                $xObj = new \stdClass;
+                $remaining = $userLimit - ($currentTotal + $acceptedTotal);
+                $xObj->keterangan = "Placement melebihi limit! Limit: " . number_format($userLimit, 2, ',', '.') . ", Sisa: " . number_format($remaining, 2, ',', '.') . ", Placement #{$q->Num}: " . number_format($q->Nominal, 2, ',', '.');
+                $xObj->value = $q;
+                $dtRefusePlacement[] = $xObj;
+                continue;
+            }
+
             $saldoTerpakai += $q->Nominal;
             $limitSaldo = (session('Comp')->limitsaldo ?? 0);
             if ($saldoTerpakai > $limitSaldo) {
@@ -223,8 +244,11 @@ class CPlay extends Controller
                 continue;
             }
 
+            // Accept this placement and update running total (only after all checks pass)
+            $acceptedTotal += $q->Nominal;
             $mySaldo -= $q->Nominal;
             $Total += $q->Nominal;
+            
             // SAVE PLACEMENT DETAIL TRANS
             $DetailID = $qry->insID("tplacementd", $dtDetail);
 

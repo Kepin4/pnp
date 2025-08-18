@@ -23,7 +23,7 @@ class CData extends Controller
         $myLevel = session('level');
         $myID = session('idUser');
         $whrLevel = ($myLevel == 1 ? "" : ($myLevel == 4 ? "AND idatasan = '{$myID}'" : "AND level > '$myLevel' "));
-        $str = "SELECT u.id, u.username, u.level, u.cashback, u.idatasan, u.komisi, u.status, u.kodebank, u.norek, u.namarek, b.nama as namabank FROM tuser u LEFT JOIN tbank b ON u.kodebank = b.kode WHERE u.level <> 1 $whrLevel ORDER BY u.status ASC, u.id ASC ";
+        $str = "SELECT u.id, u.username, u.level, u.cashback, u.idatasan, u.komisi, u.status, u.limitplacement, u.kodebank, u.norek, u.namarek, b.nama as namabank FROM tuser u LEFT JOIN tbank b ON u.kodebank = b.kode WHERE u.level <> 1 $whrLevel ORDER BY u.status ASC, u.id ASC ";
         $dtUser = $qry->use($str);
 
         $str = "SELECT iduser, SUM(amount) amount FROM tsaldo GROUP BY iduser";
@@ -41,6 +41,7 @@ class CData extends Controller
                 'komisi' => $q->komisi,
                 'status' => $q->status,
                 'saldo' => $dtSaldo[$q->id] ?? 0,
+                'limitplacement' => $q->limitplacement ?? 0,
                 'kodebank' => $q->kodebank ?? '',
                 'norek' => $q->norek ?? '',
                 'namarek' => $q->namarek ?? '',
@@ -109,6 +110,7 @@ class CData extends Controller
             'idatasan' => $myLevel == 4 ? $myID : 0,
             'komisi' => $dt['txtKomisi'] ?? 0,
             'maxcashback' => $dt['txtMaxCashback'],
+            'limitplacement' => $dt['txtPlacementLimit'] ?? 0,
             'kodebank' => $dt['selBank'] ?? '',
             'norek' => $dt['txtNoRek'] ?? '',
             'namarek' => $dt['txtNamaRek'] ?? '',
@@ -149,6 +151,19 @@ class CData extends Controller
             return redirect()->to('../CData/User');
         }
 
+        // Check if user is on placement before allowing limitplacement update
+        $str = "SELECT idshift, id FROM tsesi WHERE status = 1;";
+        $dtID = $qry->usefirst($str);
+        $xIDShift = $dtID->idshift ?? 0;
+        $xIDSesi = $dtID->id ?? 0;
+
+        $str = "SELECT 1 FROM tplacement WHERE idshift = '$xIDShift' AND idsesi = '$xIDSesi' AND iduser = '$IDUser'";
+        $dtAny = $qry->usefirst($str);
+        if ($dtAny) {
+            session()->setflashdata('alert', '3|User Sedang on Placement, tidak dapat mengubah Placement Limit!');
+            return redirect()->to('../CData/User');
+        }
+
         $dtUpd = array(
             'username' => $dt['txtNamaUser'],
             'level' => $dt['cbLevel'],
@@ -156,6 +171,7 @@ class CData extends Controller
             'idatasan' => $myLevel == 4 ? $myID : 0,
             'komisi' => $dt['txtKomisi'] ?? 0,
             'maxcashback' => $dt['txtMaxCashback'],
+            'limitplacement' => $dt['txtPlacementLimit'] ?? 0,
             'kodebank' => $dt['selBankDetail'] ?? '',
             'norek' => $dt['txtNoRekDetail'] ?? '',
             'namarek' => $dt['txtNamaRekDetail'] ?? '',
