@@ -198,11 +198,11 @@ class CPlay extends Controller
         // Get user's placement limit and current total
         $str = "SELECT limitplacement FROM tuser WHERE id = $myID";
         $userLimit = $qry->usefirst($str)->limitplacement ?? 0;
-        
+
         // Get current session's total placement for this user
         $str = "SELECT IFNULL(SUM(total), 0) as currentTotal FROM tplacement WHERE id <> $HeaderID AND idshift = '{$idShift}' AND idsesi = '{$idSesi}' AND iduser = '{$myID}' AND status = 1";
         $currentTotal = $qry->usefirst($str)->currentTotal ?? 0;
-        
+
         $acceptedTotal = 0; // Track accepted placements in this transaction
 
         foreach ($dtPlacement as $q) {
@@ -248,7 +248,7 @@ class CPlay extends Controller
             $acceptedTotal += $q->Nominal;
             $mySaldo -= $q->Nominal;
             $Total += $q->Nominal;
-            
+
             // SAVE PLACEMENT DETAIL TRANS
             $DetailID = $qry->insID("tplacementd", $dtDetail);
 
@@ -359,6 +359,9 @@ class CPlay extends Controller
             return redirect()->to('/CPlay/Play');
         }
 
+        $str = "SELECT inputdate FROM tshift WHERE id = {$idShift};";
+        $tglPeriode = new DateTime($qry->usefirst($str)->inputdate ?? $xJam);
+
         //Proses Save
         $qry->db->transStart();
 
@@ -425,6 +428,7 @@ class CPlay extends Controller
             'jenistrans' => 3,
             'iduser' => $myID,
             'tanggal' => $xJam->format('Y-m-d H:i:s'),
+            'tanggalperiode' => $tglPeriode->format('Y-m-d H:i:s'),
             'keterangan' => 'Placement',
             'amount' => $Total * -1,
             'cashback' => 0,

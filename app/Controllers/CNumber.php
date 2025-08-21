@@ -345,6 +345,9 @@ class CNumber extends Controller
         }
 
 
+        $str = "SELECT inputdate FROM tshift WHERE id = {$idShift};";
+        $tglPeriode = new DateTime($qry->usefirst($str)->inputdate ?? $xJam);
+
         $str = "SELECT chkwizard, idwizard FROM tcomp";
         $dtComp = $qry->usefirst($str);
         if ($dtComp->chkwizard == 1) {
@@ -414,6 +417,7 @@ class CNumber extends Controller
                     'jenistrans' => 6,
                     'iduser' => $q->iduser,
                     'tanggal' => $xJam->format('Y-m-d H:i:s'),
+                    'tanggalperiode' => $tglPeriode->format('Y-m-d H:i:s'),
                     'keterangan' => "WIN Number {$Num}",
                     'amount' => $q->amount * 22,
                     'cashback' => $q->cashback,
@@ -511,6 +515,7 @@ class CNumber extends Controller
                     'jenistrans' => 6,
                     'iduser' => $q->iduser,
                     'tanggal' => $xJam->format('Y-m-d H:i:s'),
+                    'tanggalperiode' => $tglPeriode->format('Y-m-d H:i:s'),
                     'keterangan' => "WIN Number $Num - ($q->alias)",
                     'amount' => $q->amount * 2,
                     'cashback' => $q->cashback,
@@ -601,6 +606,7 @@ class CNumber extends Controller
                                 'jenistrans' => 7,
                                 'iduser' => $qUser->idatasan,
                                 'tanggal' => $xJam->format('Y-m-d H:i:s'),
+                                'tanggalperiode' => $tglPeriode->format('Y-m-d H:i:s'),
                                 'keterangan' => 'Commission User',
                                 'amount' => $xKomisi,
                                 'total' => $xKomisi,

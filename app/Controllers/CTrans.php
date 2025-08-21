@@ -61,7 +61,25 @@ class CTrans extends Controller
             $xKali = -1;
         }
 
-        $str = "SELECT t.id, t.notrans, t.tanggal, t.iduser, u.username, t.jenistrans, jt.jenis, t.keterangan, (t.amount * $xKali) amount, ((t.amount * t.cashback) * $xKali) cashback, (t.total * $xKali) total FROM ttrans t LEFT JOIN tuser u ON t.iduser = u.id LEFT JOIN tjenistrans jt ON t.jenistrans = jt.id WHERE t.status = 5 AND t.jenistrans <> 7 AND DATE(t.tanggal) BETWEEN '{$dtStart}' AND '{$dtEnd}' {$whr} ORDER BY t.id DESC";
+        $str = "SELECT 
+                    t.id,
+                    t.notrans,
+                    t.tanggal,
+                    t.iduser,
+                    u.username,
+                    t.jenistrans,
+                    jt.jenis,
+                    t.keterangan,
+                    (t.amount * $xKali) amount,
+                    ((t.amount * t.cashback) * $xKali) cashback,
+                    (t.total * $xKali) total
+                FROM ttrans t
+                    LEFT JOIN tuser u ON t.iduser = u.id
+                    LEFT JOIN tjenistrans jt ON t.jenistrans = jt.id
+                WHERE t.status = 5
+                    AND t.jenistrans <> 7 
+                    AND DATE(t.tanggal) BETWEEN '{$dtStart}' AND '{$dtEnd}' {$whr}
+                ORDER BY t.id DESC";
         $data['dtTrans'] = $qry->use($str);
         $data['anyData'] = !empty($data['dtTrans']);
         $data['fltrTrans'] = (object) array('dtStart' => $dtStart, 'dtEnd' => $dtEnd);
@@ -145,6 +163,7 @@ class CTrans extends Controller
             'jenistrans' => $IDJenisTrans,
             'iduser' => $IDAccount,
             'tanggal' => $xJam->format('Y-m-d H:i:s'),
+            'tanggalperiode' => $xJam->format('Y-m-d H:i:s'),
             'keterangan' => $Keterangan,
             'amount' => $Amount,
             'total' => $Total,
@@ -328,7 +347,7 @@ class CTrans extends Controller
             // Get all notrans with the same noref (for multi-payment topups)
             $str = "SELECT notrans FROM ttrans WHERE noref = (SELECT noref FROM ttrans WHERE notrans = '{$xNotrans}') AND jenistrans = 1 AND status = 5";
             $allNotrans = $qry->use($str);
-            
+
             if (!empty($allNotrans)) {
                 $notransList = array_column($allNotrans, 'notrans');
                 $notransString = "'" . implode("','", $notransList) . "'";
@@ -377,7 +396,7 @@ class CTrans extends Controller
         // Get all transaction numbers for this reference
         $allNotrans = array_column($dtTrans, 'notrans');
         $notransString = implode(',', $allNotrans);
-        
+
         // Store the transaction numbers in session for the detail view
         session()->setFlashdata('multi_notrans', $notransString);
 
@@ -1150,7 +1169,16 @@ class CTrans extends Controller
         $str = "SELECT id, username, level, idatasan FROM tuser WHERE status = 5 AND level > 3 $whrID";
         $dtUser = $qry->use($str);
 
-        $str = "SELECT h.iduser, SUM(d.amount) total, SUM(d.amount * (IF(d.isbanding, 2, 22)) * d.cashback) cashback FROM tplacement h LEFT JOIN tplacementd d ON h.id = d.idplacement WHERE h.status = 5 AND date(h.inputdate) BETWEEN '$dtStart' AND '$dtEnd' GROUP BY h.iduser;";
+        $str = "SELECT
+                    h.iduser,
+                    SUM(d.amount) total,
+                    SUM(d.amount * (IF(d.isbanding, 2, 22)) * d.cashback) cashback
+                FROM tplacement h
+                    INNER JOIN tplacementd d ON h.id = d.idplacement
+                    INNER JOIN ttrans t ON h.notrans = t.notrans AND t.jenistrans = 3
+                WHERE h.status = 5
+                    AND DATE(t.tanggalperiode) BETWEEN '$dtStart' AND '$dtEnd'
+                GROUP BY h.iduser;";
         $dtPlacement = $qry->use($str);
 
         $str = "SELECT notrans, iduser, SUM(amount) amount, SUM(total * cashback) cashback, SUM(total) total FROM twind WHERE date(tanggal) BETWEEN '$dtStart' AND '$dtEnd' GROUP BY notrans";
@@ -1590,7 +1618,7 @@ class CTrans extends Controller
         $Keterangan = $this->request->getPost("txtDesc");
         $xKodeReq = $this->request->getPost("txtKodeReq");
         $totalTopupAmount = $this->request->getPost("txtTotalTopupAmount");
-        
+
         // Get payment arrays
         $paymentMethods = $this->request->getPost("payment_method");
         $paymentAmounts = $this->request->getPost("payment_amount");
@@ -1602,14 +1630,14 @@ class CTrans extends Controller
 
         // Calculate total paid amount (new payments only)
         $newPaymentAmount = array_sum($paymentAmounts);
-        
+
         // Get existing paid amount from database
         $str = "SELECT COALESCE(SUM(t.amount), 0) as existing_paid
                 FROM ttrans t 
                 WHERE t.noref = '{$xKodeReq}' AND t.jenistrans = 1 AND t.status = 5";
         $existingPaidResult = $qry->usefirst($str);
         $existingPaidAmount = $existingPaidResult->existing_paid ?? 0;
-        
+
         // Total paid amount = existing + new payments
         $totalPaidAmount = $existingPaidAmount + $newPaymentAmount;
 
@@ -1628,13 +1656,14 @@ class CTrans extends Controller
 
             $Notrans = func::getKey("ttrans", "notrans", $KodeDepan, $xJam, true, true);
             $paymentMethodName = $this->getPaymentMethodName($paymentMethod);
-            
+
             $dtTrans = array(
                 'notrans' => $Notrans,
                 'noref' => $xKodeReq,
                 'jenistrans' => $IDJenisTrans,
                 'iduser' => $IDAccount,
                 'tanggal' => $xJam->format('Y-m-d H:i:s'),
+                'tanggalperiode' => $xJam->format('Y-m-d H:i:s'),
                 'keterangan' => $Keterangan . " - " . $paymentMethodName,
                 'amount' => $finalAmount,
                 'total' => $amount,
@@ -1672,7 +1701,7 @@ class CTrans extends Controller
         // Update request status based on payment completion
         if ($xKodeReq != "") {
             $newStatus = ($totalPaidAmount >= $totalTopupAmount) ? 5 : 4;
-            
+
             if ($IDJenisTrans == 1) {
                 $rslt = $qry->upd("treqtopup", array('status' => $newStatus, 'updateby' => $myID, 'updatedate' => $xJam->format('Y-m-d H:i:s')), array('kodereq' => $xKodeReq));
             } elseif ($IDJenisTrans == 4) {
@@ -1701,10 +1730,14 @@ class CTrans extends Controller
     private function getPaymentMethodName($methodId)
     {
         switch ($methodId) {
-            case 1: return "Cash";
-            case 2: return "Bank Transfer";
-            case 3: return "E-Wallet";
-            default: return "Unknown";
+            case 1:
+                return "Cash";
+            case 2:
+                return "Bank Transfer";
+            case 3:
+                return "E-Wallet";
+            default:
+                return "Unknown";
         }
     }
 }
