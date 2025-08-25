@@ -600,7 +600,7 @@ class CTrans extends Controller
 
         echo view("vHead");
         echo view("vMenu");
-        echo view("vNewTrans", $data);
+        echo view("vNewWithdrawTrans", $data);
         echo view("vFooter");
     }
 
@@ -1746,5 +1746,18 @@ class CTrans extends Controller
             default:
                 return "Unknown";
         }
+    }
+
+    public function CekTopupPending()
+    {
+        $qry = new Base_model();
+        $userId = $_POST['userId'] ?? 0;
+        if (!($userId > 0)) {
+            return json_encode(['hasPending' => false]);
+        }
+        
+        $str = "SELECT COUNT(1) AS cnt FROM treqtopup WHERE iduser = '$userId' AND status IN (4)";
+        $result = $qry->usefirst($str);
+        return json_encode(['hasPending' => $result->cnt > 0]);
     }
 }
