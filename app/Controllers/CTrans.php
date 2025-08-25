@@ -754,8 +754,13 @@ class CTrans extends Controller
             $totalAmount = 0;
             $totalPaid = 0;
             if (!empty($dtReqTopup)) {
-                $totalAmount = array_sum(array_column($dtReqTopup, 'amount'));
-                $totalPaid = array_sum(array_column($dtReqTopup, 'paid_amount'));
+
+                $dtFiltered = array_filter($dtReqTopup, function ($item) {
+                    return $item->status == 5 || $item->status == 4;
+                });
+
+                $totalAmount = array_sum(array_column($dtFiltered, 'amount'));
+                $totalPaid = array_sum(array_column($dtFiltered, 'paid_amount'));
             }
 
             // Prepare response

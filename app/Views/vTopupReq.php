@@ -249,9 +249,9 @@
                                             <th class="ps-2">#</th>
                                             <th>Kode Request</th>
                                             <th>Member</th>
-                                            <th>Amount</th>
-                                            <th>Paid Amount</th>
-                                            <th>Remaining Balance</th>
+                                            <th class="text-right">Amount</th>
+                                            <th class="text-right">Paid Amount</th>
+                                            <th class="text-right">Remaining Balance</th>
                                             <th>Date</th>
                                             <th>Status</th>
                                             <th>Topup By</th>
@@ -371,9 +371,9 @@
                 index + 1,
                 item.kodereq,
                 item.username,
-                formatAmount(item.amount),
-                formatAmount(paidAmount),
-                formatAmount(remainingBalance),
+                `<div class="text-right">${formatAmount(item.amount || 0)}</div>`,
+                `<div class="text-right">${formatAmount(paidAmount)}</div>`,
+                `<div class="text-right">${formatAmount(remainingBalance)}</div>`,
                 formatDate(item.tanggal),
                 renderStatus(item.status),
                 item.topup_by || '',
