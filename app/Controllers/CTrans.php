@@ -1683,17 +1683,19 @@ class CTrans extends Controller
                 break;
             }
 
-            $rslt = $qry->ins("tsaldo",  array(
-                'notrans' => $Notrans,
-                'tanggal' => $xJam->format('Y-m-d H:i:s'),
-                'iduser' => $IDAccount,
-                'amount' => $finalAmount,
-                'inputby' => $myID,
-                'inputdate' =>  $xJam->format('Y-m-d H:i:s')
-            ));
-            if (!$rslt) {
-                $allTransSuccess = false;
-                break;
+            if ($existingPaidAmount == 0 && $IDJenisTrans == 1 && $xKodeReq != "") {
+                $rslt = $qry->ins("tsaldo",  array(
+                    'notrans' => $Notrans,
+                    'tanggal' => $xJam->format('Y-m-d H:i:s'),
+                    'iduser' => $IDAccount,
+                    'amount' => $totalTopupAmount,
+                    'inputby' => $myID,
+                    'inputdate' =>  $xJam->format('Y-m-d H:i:s')
+                ));
+                if (!$rslt) {
+                    $allTransSuccess = false;
+                    break;
+                }
             }
         }
 
