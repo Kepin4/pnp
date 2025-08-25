@@ -95,11 +95,17 @@
             </div>
 
             <?php if (session('level') >= 1 && session('level') <= 3) { ?>
-                <a href="<?= base_url('../CNumber/SetNumber') ?>">
-                    <button class="btn btn-lg btn-primary">
-                        SET ANGKA
+                <div class="flex flex-row gap-2">
+                    <a href="<?= base_url('../CNumber/SetNumber') ?>">
+                        <button class="btn btn-lg btn-primary">
+                            SET ANGKA
+                        </button>
+                    </a>
+
+                    <button class="btn btn-lg btn-danger" onClick="undoLastNumber()">
+                        UNDO
                     </button>
-                </a>
+                </div>
             <?php } ?>
 
             <div class="row mt-1">
@@ -141,3 +147,35 @@
         </div>
     </main>
 </body>
+
+
+
+<script>
+    function undoLastNumber() {
+        if (confirm('Apakah Anda yakin ingin undo nomor terakhir?')) {
+            $.ajax({
+                url: '<?= base_url('../CNumber/UndoLastNumber') ?>',
+                type: 'POST',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        fAlert('5|Nomor terakhir berhasil dihapus.');
+                        $('html, body').animate({
+                            scrollTop: 0
+                        }, 'fast')
+
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        fAlert('3|Gagal menghapus nomor terakhir: ' + data.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    fAlert('3|Terjadi kesalahan saat menghapus nomor terakhir.');
+                }
+            });
+        }
+    }
+</script>

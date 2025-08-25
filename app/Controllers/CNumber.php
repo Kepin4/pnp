@@ -698,4 +698,63 @@ class CNumber extends Controller
         session()->setFlashdata('alert', "5|Success UPDATE NUMBER!");
         return redirect()->to('/CNumber/SetNumber');
     }
+
+
+    public function UndoLastNumber()
+    {
+        $myID = session('idUser');
+        $myLevel = session('level');
+
+        if (!($myLevel >= 1 && $myLevel <= 3)) {
+            return json_encode(['success' => false, 'message' => 'Tidak Memiliki Akses!']);
+        }
+
+        $qry = new Base_model();
+        $xJam = new DateTime($qry->getWaktu());
+        $str = "SELECT id FROM tshift WHERE NOT isclose";
+        $idShift = func::NumNull($qry->usefirst($str)->id);
+        if ($idShift == 0) {
+            return json_encode(['success' => false, 'message' => 'Tidak ada Shift, pastikan sudah mulai Shift!']);
+        }
+        $str = "SELECT id, jamselesai FROM tsesi WHERE status = 5 AND idshift = $idShift ORDER BY id DESC LIMIT 1";
+        $qSesi = $qry->usefirst($str);
+        if (!$qSesi) {
+            return json_encode(['success' => false, 'message' => 'Tidak ada Sesi yang bisa di Undo!']);
+        }
+
+        $idSesi = $qSesi->id;
+
+        $idWin = $qry->usefirst("SELECT id FROM twin WHERE sesi = $idSesi AND idshift = $idShift AND status = 5 ORDER BY id DESC LIMIT 1")->id ?? 0;
+
+        $qry->db->transStart();
+        if (!$qry->del('twin', array('idshift' => $idShift, 'sesi' => $idSesi))) {
+            $qry->db->transRollback();
+            return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Win, Silahkan dicoba lagi !']);
+        }
+        if (!$qry->del('twind', array('idwin' => $idWin))) {
+            $qry->db->transRollback();
+            return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Detail Win, Silahkan dicoba lagi !']);
+        }
+        if (!$qry->del('tsaldo', array('notrans' => function ($builder) use ($idSesi) {
+            $builder->select('notrans')->from('ttrans')->where(['jenistrans' => 6, 'noref' => $idSesi]);
+        }))) {
+            $qry->db->transRollback();
+            return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Saldo, Silahkan dicoba lagi !']);
+        }
+        if (!$qry->del('ttrans', array('jenistrans' => 6, 'noref' => $idSesi))) {
+            $qry->db->transRollback();
+            return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Trans, Silahkan dicoba lagi !']);
+        }
+        if (!$qry->upd('tsesi', array('number' => 0, 'jamupdate' => null, 'status' => 1, 'updateby' => $myID, 'updatedate' => $xJam->format('Y-m-d H:i:s')), array('id' => $idSesi))) {
+            $qry->db->transRollback();
+            return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Sesi, Silahkan dicoba lagi !']);
+        }
+        $qry->db->transComplete();
+        if ($qry->db->transStatus() === FALSE) {
+            $qry->db->transRollback();
+            return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan, Silahkan Coba lagi!']);
+        }
+        session()->setFlashdata('alert', "5|Success UNDO LAST NUMBER!");
+        return json_encode(['success' => true]);
+    }
 }
