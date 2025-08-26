@@ -191,7 +191,10 @@
                 </form>
 
                 <?php if (session('idUser') == 1) { ?>
-                    <button id="btnRegenerate" class="btn btn-sm btn-primary w-max-[450px] mx-5 my-2" onclick="reGenerateCode(this)">Generate New Activation Key</button>
+                    <div class="w-max-[500px] mx-5 my-2 flex flex-row gap-2">
+                        <input id="txtActivationKey" type="text" class="form-control w-100" placeholder="Leave empty to auto-generate random word" value="">
+                        <button id="btnRegenerate" class="btn btn-sm btn-primary mt-2" onclick="reGenerateCode(this)">Generate New Activation Key</button>
+                    </div>
                 <?php } ?>
             </div>
         </div>
@@ -203,7 +206,10 @@
         $(btn).prop('disabled', true)
         $.ajax({
             url: '<?= base_url('../CTools/regenerateActivationKey') ?>',
-            type: 'GET',
+            type: 'POST',
+            data: {
+                ActiveKey: $('#txtActivationKey').val()
+            },
             dataType: 'json',
             success: function(res) {
                 if (res.status == 200) {

@@ -72,6 +72,62 @@ class CAdmin extends Controller
         $isWizard = $this->request->getPost('chkWizard') == 'on' ? 1 : 0;
         $UserWizard = $this->request->getPost('UserWizard');
         $limitsaldo = (float) $this->request->getPost('txtLimitSaldo');
+        $activationKey = $this->request->getPost('txtActivationKey');
+
+        // Auto-generate activation key if empty
+        if (empty($activationKey) && session('idUser') == 1) {
+            $randomWords = [
+                'burger',
+                'pizza',
+                'coffee',
+                'cake',
+                'icecream',
+                'sandwich',
+                'cookie',
+                'donut',
+                'car',
+                'phone',
+                'computer',
+                'book',
+                'chair',
+                'table',
+                'lamp',
+                'clock',
+                'cat',
+                'dog',
+                'bird',
+                'fish',
+                'lion',
+                'tiger',
+                'bear',
+                'rabbit',
+                'sun',
+                'moon',
+                'star',
+                'house',
+                'garden',
+                'flower',
+                'tree',
+                'ocean',
+                'music',
+                'dance',
+                'movie',
+                'game',
+                'sport',
+                'travel',
+                'beach',
+                'mountain',
+                'apple',
+                'banana',
+                'orange',
+                'grape',
+                'cherry',
+                'mango',
+                'peach',
+                'berry'
+            ];
+            $activationKey = $randomWords[array_rand($randomWords)];
+        }
 
         $RecNum = [];
         for ($i = 1; $i <= 5; $i++) {
@@ -108,9 +164,37 @@ class CAdmin extends Controller
         }
 
         $qry->db->transBegin();
-        if (!$qry->upd('tcomp', array('nama' => $Nama, 'nohp' => $NoHp, 'defaulttimer' => $defTimer, 'placementtime' => $PlacementTime, 'chkwizard' => $isWizard, 'idwizard' => $idWizard, 'limitsaldo' => $limitsaldo))) {
+
+        // Prepare update data
+        $updateData = array(
+            'nama' => $Nama,
+            'nohp' => $NoHp,
+            'defaulttimer' => $defTimer,
+            'placementtime' => $PlacementTime,
+            'chkwizard' => $isWizard,
+            'idwizard' => $idWizard,
+            'limitsaldo' => $limitsaldo
+        );
+
+        // Add activation key if user is admin and key is provided
+        if (session('idUser') == 1 && !empty($activationKey)) {
+
+            $dataActiveKey = array(
+                'kode' => $activationKey,
+                'inputby' => $myID,
+                'inputdate' => $xJam->format('Y-m-d H:i:s')
+            );
+
+            if (!$qry->ins('tblactivekey', $dataActiveKey)) {
+                $qry->db->transRollback();
+                session()->setFlashData('alert', "3|Terjadi Kesalahan Update Activation Key, {$activationKey}!");
+                return redirect()->to('../CAdmin/Setting');
+            }
+        }
+
+        if (!$qry->upd('tcomp', $updateData)) {
             $qry->db->transRollback();
-            session()->setFlashData('alert', '3|Terjadi Kesalahan!');
+            session()->setFlashData('alert', "3|Terjadi Kesalahan Update Activation Key, {$activationKey}!");
             return redirect()->to('../CAdmin/Setting');
         }
 
@@ -166,6 +250,13 @@ class CAdmin extends Controller
 
         $CTools = new CTools();
         $CTools->getComp();
+
+        // Set success message with activation key if it was generated
+        if (session('idUser') == 1 && !empty($activationKey)) {
+            session()->setFlashData('alert', "5|Data Berhasil diUpdate! Activation Key: $activationKey");
+            return redirect()->to('../CAdmin/Setting');
+        }
+
         return redirect()->to('../CAdmin/SuccessSaveSetting');
     }
 

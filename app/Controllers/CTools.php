@@ -194,7 +194,8 @@ class CTools extends Controller
             return json_encode(['status' => 400, 'message' => 'Unauthorized User!']);
         }
         $qry = new Base_model();
-        $key = $this->generateRandomKey();
+        $key = $_POST['ActiveKey'];
+        if ($key == '') $key = $this->generateRandomKey();
         $res = $qry->ins('tblactivekey', ['kode' => $key, 'inputby' => session('username')]);
         if ($res < 0) {
             return json_encode(['status' => 500, 'message' => 'Something Wrong Happend!']);
@@ -204,15 +205,73 @@ class CTools extends Controller
 
     function generateRandomKey($length = 15)
     {
-        $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $charactersLength = strlen($characters);
-        $randomString = '';
+        // Choose between word-based or character-based key generation
+        $useWords = true; // Set to false for alphanumeric keys
 
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[random_int(0, $charactersLength - 1)];
+        if ($useWords) {
+            $randomWords = [
+                'burger',
+                'pizza',
+                'coffee',
+                'cake',
+                'icecream',
+                'sandwich',
+                'cookie',
+                'donut',
+                'car',
+                'phone',
+                'computer',
+                'book',
+                'chair',
+                'table',
+                'lamp',
+                'clock',
+                'cat',
+                'dog',
+                'bird',
+                'fish',
+                'lion',
+                'tiger',
+                'bear',
+                'rabbit',
+                'sun',
+                'moon',
+                'star',
+                'house',
+                'garden',
+                'flower',
+                'tree',
+                'ocean',
+                'music',
+                'dance',
+                'movie',
+                'game',
+                'sport',
+                'travel',
+                'beach',
+                'mountain',
+                'apple',
+                'banana',
+                'orange',
+                'grape',
+                'cherry',
+                'mango',
+                'peach',
+                'berry'
+            ];
+            return $randomWords[array_rand($randomWords)];
+        } else {
+            // Generate alphanumeric key
+            $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            $charactersLength = strlen($characters);
+            $randomString = '';
+
+            for ($i = 0; $i < $length; $i++) {
+                $randomString .= $characters[random_int(0, $charactersLength - 1)];
+            }
+
+            return $randomString;
         }
-
-        return $randomString;
     }
 
     function runMigrations($version)
