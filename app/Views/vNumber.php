@@ -101,10 +101,6 @@
                             SET ANGKA
                         </button>
                     </a>
-
-                    <button class="btn btn-lg btn-danger" onClick="undoLastNumber()">
-                        UNDO
-                    </button>
                 </div>
             <?php } ?>
 
@@ -147,35 +143,3 @@
         </div>
     </main>
 </body>
-
-
-
-<script>
-    function undoLastNumber() {
-        if (confirm('Apakah Anda yakin ingin undo nomor terakhir?')) {
-            $.ajax({
-                url: '<?= base_url('../CNumber/UndoLastNumber') ?>',
-                type: 'POST',
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success) {
-                        fAlert('5|Nomor terakhir berhasil dihapus.');
-                        $('html, body').animate({
-                            scrollTop: 0
-                        }, 'fast')
-
-                        setTimeout(() => {
-                            location.reload();
-                        }, 2000);
-                    } else {
-                        fAlert('3|Gagal menghapus nomor terakhir: ' + data.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error:', error);
-                    fAlert('3|Terjadi kesalahan saat menghapus nomor terakhir.');
-                }
-            });
-        }
-    }
-</script>

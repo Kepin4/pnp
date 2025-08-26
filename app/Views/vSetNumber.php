@@ -108,7 +108,10 @@
                     <h4>ID Shift : <span><?= $idShift ?></span></h4>
                     <h4>Periode : <span><?= $SesiCount ?></span></h4>
                     <h4>Timer : <span id="lblTimer">00:00</span></h4>
-                    <button id="btnUpdNum" class="btn btn-lg btn-primary mt-4 w-55 px-2" disabled>UPDATE NUMBER</button>
+                    <div class="d-flex flex-col gap-2">
+                        <button id="btnUpdNum" class="btn btn-lg btn-primary mt-4 w-55 px-2" disabled>UPDATE NUMBER</button>
+                        <button class="btn btn-lg btn-danger mt-4 w-55 px-2" onclick="undoLastNumber()">UNDO</button>
+                    </div>
                     <a href="<?= base_url('../../CNumber/CloseShift') ?>"><button id="btnCloseShift" class="btn btn-lg btn-primary mt-4 w-44 px-3" hidden>Close Shift</button></a>
                 </div>
             </div>
@@ -327,5 +330,38 @@
         dateNow.setSeconds(dateNow.getSeconds() + 1);
         xNow = dateNow;
         setTimer();
+    }
+</script>
+
+
+
+
+<script>
+    function undoLastNumber() {
+        if (confirm('Apakah Anda yakin ingin undo nomor terakhir?')) {
+            $.ajax({
+                url: '<?= base_url('../CNumber/UndoLastNumber') ?>',
+                type: 'POST',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        fAlert('5|Nomor terakhir berhasil dihapus.');
+                        $('html, body').animate({
+                            scrollTop: 0
+                        }, 'fast')
+
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        fAlert('3|Gagal menghapus nomor terakhir: ' + data.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    fAlert('3|Terjadi kesalahan saat menghapus nomor terakhir.');
+                }
+            });
+        }
     }
 </script>

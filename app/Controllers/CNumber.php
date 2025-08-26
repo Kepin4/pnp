@@ -259,7 +259,7 @@ class CNumber extends Controller
             $idShift = $dtShift->id;
         }
 
-        $str = "SELECT count(1) periode FROM tsesi WHERE idshift = '{$idShift}'";
+        $str = "SELECT count(1) periode FROM tsesi WHERE idshift = '{$idShift}' AND status <> 8";
         $xPeriode = $qry->usefirst($str)->periode ?? 0;
         $data['histWin'] = $dtWin;
         $data['idShift'] = $idShift;
@@ -711,11 +711,20 @@ class CNumber extends Controller
 
         $qry = new Base_model();
         $xJam = new DateTime($qry->getWaktu());
+
+
         $str = "SELECT id FROM tshift WHERE NOT isclose";
         $idShift = func::NumNull($qry->usefirst($str)->id);
         if ($idShift == 0) {
             return json_encode(['success' => false, 'message' => 'Tidak ada Shift, pastikan sudah mulai Shift!']);
         }
+
+        $str = "SELECT status FROM tsesi WHERE idshift = $idShift AND status != 1 ORDER BY id DESC LIMIT 1";
+        $qCekSesi = $qry->usefirst($str)->status ?? 0;
+        if ($qCekSesi == 8) {
+            return json_encode(['success' => false, 'message' => 'Sudah tidak dapat Undo!']);
+        }
+
         $str = "SELECT id, jamselesai FROM tsesi WHERE status = 5 AND idshift = $idShift ORDER BY id DESC LIMIT 1";
         $qSesi = $qry->usefirst($str);
         if (!$qSesi) {
@@ -745,7 +754,7 @@ class CNumber extends Controller
             $qry->db->transRollback();
             return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Trans, Silahkan dicoba lagi !']);
         }
-        if (!$qry->upd('tsesi', array('number' => 0, 'jamupdate' => null, 'status' => 1, 'updateby' => $myID, 'updatedate' => $xJam->format('Y-m-d H:i:s')), array('id' => $idSesi))) {
+        if (!$qry->upd('tsesi', array('number' => 0, 'jamupdate' => null, 'status' => 8, 'updateby' => $myID, 'updatedate' => $xJam->format('Y-m-d H:i:s')), array('id' => $idSesi))) {
             $qry->db->transRollback();
             return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Sesi, Silahkan dicoba lagi !']);
         }
