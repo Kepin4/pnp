@@ -74,7 +74,7 @@ function frmtTD(float $xVal, bool $reverse = false, bool $isNoColor = false)
                             <form id="frmFilter" action="<?= base_url('/CTrans/IncomeReport') ?>" method="POST">
                                 <?= csrf_field() ?>
                                 <div class="filter-box">
-                                    <h5>Filter Tanggak</h5>
+                                    <h5>Filter Tanggal</h5>
                                     <input id="txtID" name="txtID" value="<?= $fltrTrans->txtID ?>" type="hidden">
                                     <input id="txtIsNoAgent" name="txtIsNoAgent" value="<?= $fltrTrans->txtIsNoAgent ?>" type="hidden">
                                     <div class="row">
