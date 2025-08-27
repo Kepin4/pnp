@@ -754,6 +754,10 @@ class CNumber extends Controller
             $qry->db->transRollback();
             return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Trans, Silahkan dicoba lagi !']);
         }
+        if (!$qry->del('ttrans', array('jenistrans' => 7, 'noref' => $idSesi))) {
+            $qry->db->transRollback();
+            return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Trans, Silahkan dicoba lagi !']);
+        }
         if (!$qry->upd('tsesi', array('number' => 0, 'jamupdate' => null, 'status' => 8, 'updateby' => $myID, 'updatedate' => $xJam->format('Y-m-d H:i:s')), array('id' => $idSesi))) {
             $qry->db->transRollback();
             return json_encode(['success' => false, 'message' => 'Terjadi Kesalahan pada Hapus Sesi, Silahkan dicoba lagi !']);

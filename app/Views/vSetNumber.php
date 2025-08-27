@@ -110,7 +110,7 @@
                     <h4>Timer : <span id="lblTimer">00:00</span></h4>
                     <div class="d-flex flex-col gap-2">
                         <button id="btnUpdNum" class="btn btn-lg btn-primary mt-4 w-55 px-2" disabled>UPDATE NUMBER</button>
-                        <button class="btn btn-lg btn-danger mt-4 w-55 px-2" onclick="undoLastNumber()">UNDO</button>
+                        <!-- <button class="btn btn-lg btn-danger mt-4 w-55 px-2" onclick="undoLastNumber()">UNDO</button> -->
                     </div>
                     <a href="<?= base_url('../../CNumber/CloseShift') ?>"><button id="btnCloseShift" class="btn btn-lg btn-primary mt-4 w-44 px-3" hidden>Close Shift</button></a>
                 </div>
