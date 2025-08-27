@@ -1047,8 +1047,8 @@ class CTrans extends Controller
         $myLevel = session('level');
         $myID = session('idUser');
 
-
-        $dtStart = $xJam->format("Y-m-d");
+        $startJam = clone $xJam;
+        $dtStart = $startJam->modify($xJam->format("H") < 10 ? '-1 day' : '+0 day')->format("Y-m-d");
         $dtEnd = $xJam->format("Y-m-d");
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -1082,7 +1082,15 @@ class CTrans extends Controller
         $dtPlacement = $qry->use($str);
 
         $dtData = [];
-        $str = "SELECT notrans, tanggal, iduser, amount FROM ttrans WHERE jenistrans = 3 {$whr} AND date(tanggalperiode) BETWEEN '{$dtStart}' AND '{$dtEnd}' AND status = 5 ORDER BY id DESC";
+        $str = "SELECT 
+                    notrans,
+                    tanggal,
+                    iduser,
+                    amount
+                FROM ttrans 
+                WHERE jenistrans = 3 {$whr}
+                    AND tanggal > (SELECT min(t.tanggalperiode) FROM ttrans t WHERE DATE(t.tanggal) BETWEEN '{$dtStart}' AND '{$dtEnd}' AND t.jenistrans = 3 AND t.status = 5)
+                    AND status = 5 ORDER BY id DESC";
         foreach ($qry->use($str) as $q) {
             $obj = new stdClass;
             $obj->notrans = $q->notrans;
