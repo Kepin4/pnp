@@ -1125,7 +1125,8 @@ class CTrans extends Controller
         $myLevel = session('level');
         $myID = session('idUser');
 
-        $dtStart = $xJam->format("Y-m-d");
+        $startJam = clone $xJam;
+        $dtStart = $startJam->modify($xJam->format("H") < 10 ? '-1 day' : '+0 day')->format("Y-m-d");
         $dtEnd = $xJam->format("Y-m-d");
         $txtID = 0;
         $txtIsNoAgent = false;
@@ -1149,12 +1150,14 @@ class CTrans extends Controller
         }
 
         $whrID = " AND idatasan = '$myID'";
-        if ($myLevel >= 1 && $myLevel <= 3) {
-            $whrID = "AND level = 4";
-        } elseif ($myLevel == 4) {
+        if ($myLevel >= 1 && $myLevel <= 3 && (($txtID == 0 || $txtID == "") && !$txtIsNoAgent)) {
+            $whrID = " AND level = 4";
+        } elseif ($myLevel == 4 && !$txtIsNoAgent) {
             $whrID = " AND idatasan = '$myID'";
-        } else {
+        } elseif (!$txtIsNoAgent) {
             $whrID = " AND id = '$myID'";
+        } else {
+            $whrID = "";
         }
 
 
@@ -1182,7 +1185,7 @@ class CTrans extends Controller
                     INNER JOIN tplacementd d ON h.id = d.idplacement
                     INNER JOIN ttrans t ON h.notrans = t.notrans AND t.jenistrans = 3
                 WHERE h.status = 5
-                    AND DATE(t.tanggalperiode) BETWEEN '$dtStart' AND '$dtEnd'
+                    AND t.tanggal > (SELECT min(t.tanggalperiode) FROM ttrans t WHERE DATE(t.tanggal) BETWEEN '{$dtStart}' AND '{$dtEnd}' AND t.jenistrans = 3 AND t.status = 5)
                 GROUP BY h.iduser;";
         $dtPlacement = $qry->use($str);
 
@@ -1755,7 +1758,7 @@ class CTrans extends Controller
         if (!($userId > 0)) {
             return json_encode(['hasPending' => false]);
         }
-        
+
         $str = "SELECT COUNT(1) AS cnt FROM treqtopup WHERE iduser = '$userId' AND status IN (4)";
         $result = $qry->usefirst($str);
         return json_encode(['hasPending' => $result->cnt > 0]);
