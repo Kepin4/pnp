@@ -138,31 +138,31 @@
                             <label class="mt-4" style="font-size: 10px">Kode Depan Transaksi</label>
                             <div class="d-flex mb-2">
                                 <label for="" class="mt-2 w-70" style="font-size: 10px;">Topup :</label>
-                                <input type="text" name="txtKodeDepanTopup" id="txtKodeDepanTopup" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Topup'] ?>" value='<?= (!session('cache') ? $KodeDepan['Topup'] : session('cache')->$KodeDepan['Topup']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
+                                <input type="text" name="txtKodeDepanTopup" id="txtKodeDepanTopup" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Topup'] ?>" value='<?= (!session('cache') ? $KodeDepan['Topup'] : session('cache')->KodeDepan['Topup']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
                             </div>
                             <div class="d-flex mb-2">
                                 <label for="" class="mt-2 w-70" style="font-size: 10px;">Sales :</label>
-                                <input type="text" name="txtKodeDepanSales" id="txtKodeDepanSales" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Sales'] ?>" value='<?= (!session('cache') ? $KodeDepan['Sales'] : session('cache')->$KodeDepan['Sales']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
+                                <input type="text" name="txtKodeDepanSales" id="txtKodeDepanSales" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Sales'] ?>" value='<?= (!session('cache') ? $KodeDepan['Sales'] : session('cache')->KodeDepan['Sales']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
                             </div>
                             <div class="d-flex mb-2">
                                 <label for="" class="mt-2 w-70" style="font-size: 10px;">Placement :</label>
-                                <input type="text" name="txtKodeDepanPlacement" id="txtKodeDepanPlacement" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Placement'] ?>" value='<?= (!session('cache') ? $KodeDepan['Placement'] : session('cache')->$KodeDepan['Placement']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
+                                <input type="text" name="txtKodeDepanPlacement" id="txtKodeDepanPlacement" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Placement'] ?>" value='<?= (!session('cache') ? $KodeDepan['Placement'] : session('cache')->KodeDepan['Placement']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
                             </div>
                             <div class="d-flex mb-2">
                                 <label for="" class="mt-2 w-70" style="font-size: 10px;">Withdraw :</label>
-                                <input type="text" name="txtKodeDepanWithdraw" id="txtKodeDepanWithdraw" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Withdraw'] ?>" value='<?= (!session('cache') ? $KodeDepan['Withdraw'] : session('cache')->$KodeDepan['Withdraw']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
+                                <input type="text" name="txtKodeDepanWithdraw" id="txtKodeDepanWithdraw" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Withdraw'] ?>" value='<?= (!session('cache') ? $KodeDepan['Withdraw'] : session('cache')->KodeDepan['Withdraw']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
                             </div>
                             <div class="d-flex mb-2">
                                 <label for="" class="mt-2 w-70" style="font-size: 10px;">CheckIn :</label>
-                                <input type="text" name="txtKodeDepanCheckIn" id="txtKodeDepanCheckIn" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['CheckIn'] ?>" value='<?= (!session('cache') ? $KodeDepan['CheckIn'] : session('cache')->$KodeDepan['CheckIn']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
+                                <input type="text" name="txtKodeDepanCheckIn" id="txtKodeDepanCheckIn" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['CheckIn'] ?>" value='<?= (!session('cache') ? $KodeDepan['CheckIn'] : session('cache')->KodeDepan['CheckIn']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
                             </div>
                             <div class="d-flex mb-2">
                                 <label for="" class="mt-2 w-70" style="font-size: 10px;">Prize :</label>
-                                <input type="text" name="txtKodeDepanPrize" id="txtKodeDepanPrize" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Prize'] ?>" value='<?= (!session('cache') ? $KodeDepan['Prize'] : session('cache')->$KodeDepan['Prize']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
+                                <input type="text" name="txtKodeDepanPrize" id="txtKodeDepanPrize" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Prize'] ?>" value='<?= (!session('cache') ? $KodeDepan['Prize'] : session('cache')->KodeDepan['Prize']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
                             </div>
                             <div class="d-flex mb-2">
                                 <label for="" class="mt-2 w-70" style="font-size: 10px;">Commission :</label>
-                                <input type="text" name="txtKodeDepanCommission" id="txtKodeDepanCommission" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Commission'] ?>" value='<?= (!session('cache') ? $KodeDepan['Commission'] : session('cache')->$KodeDepan['Commission']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
+                                <input type="text" name="txtKodeDepanCommission" id="txtKodeDepanCommission" class="form-control ml-2 w-50" placeholder="<?= $KodeDepan['Commission'] ?>" value='<?= (!session('cache') ? $KodeDepan['Commission'] : session('cache')->KodeDepan['Commission']) ?>' <?= !(session('level') >= 1 && session('level') <= 2) ? 'disabled' : '' ?> required>
                             </div>
                         </div>
 

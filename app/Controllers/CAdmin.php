@@ -65,14 +65,29 @@ class CAdmin extends Controller
         $xJam = new Datetime($qry->getWaktu());
         $myID = session('idUser');
 
-        $Nama = $this->request->getPost('txtnama');
-        $NoHp = $this->request->getPost('txtnohp');
-        $defTimer = $this->request->getPost('txtDefTimer');
-        $PlacementTime = $this->request->getPost('txtPlacementTime');
+        // Input sanitization and validation
+        $Nama = trim($this->request->getPost('txtnama'));
+        $NoHp = trim($this->request->getPost('txtnohp'));
+        $defTimer = (int) $this->request->getPost('txtDefTimer');
+        $PlacementTime = (int) $this->request->getPost('txtPlacementTime');
         $isWizard = $this->request->getPost('chkWizard') == 'on' ? 1 : 0;
-        $UserWizard = $this->request->getPost('UserWizard');
+        $UserWizard = trim($this->request->getPost('UserWizard'));
         $limitsaldo = (float) $this->request->getPost('txtLimitSaldo');
-        $activationKey = $this->request->getPost('txtActivationKey');
+        $activationKey = trim($this->request->getPost('txtActivationKey'));
+
+        // Additional validation
+        if ($defTimer <= 0) {
+            session()->setFlashData('alert', '3|Default Timer harus lebih dari 0!');
+            return redirect()->to('../CAdmin/Setting');
+        }
+        if ($PlacementTime <= 0) {
+            session()->setFlashData('alert', '3|Placement Time harus lebih dari 0!');
+            return redirect()->to('../CAdmin/Setting');
+        }
+        if ($limitsaldo < 0) {
+            session()->setFlashData('alert', '3|Limit Saldo tidak boleh negatif!');
+            return redirect()->to('../CAdmin/Setting');
+        }
 
         // Auto-generate activation key if empty
         if (empty($activationKey) && session('idUser') == 1) {
@@ -144,8 +159,13 @@ class CAdmin extends Controller
             $xI++;
         }
 
-        $str = "SELECT id FROM tuser WHERE username = '$UserWizard';";
-        $idWizard = $qry->usefirst($str)->id ?? 0;
+        // Use parameterized query to prevent SQL injection
+        $idWizard = 0;
+        if (!empty($UserWizard)) {
+            $str = "SELECT id FROM tuser WHERE username = ?";
+            $result = $qry->db->query($str, [$UserWizard])->getRow();
+            $idWizard = $result->id ?? 0;
+        }
 
         session()->setFlashData('cache',  (object) array('Nama' => $Nama, 'NoHp' => $NoHp, 'defTimer' => $defTimer, 'RecNum' => $RecNum, 'KodeDepan' => $KodeDepan, 'PlacementTime' => $PlacementTime, 'isWizard' => $isWizard, 'idWizard' => $idWizard, 'limitsaldo' => $limitsaldo));
 
@@ -159,7 +179,7 @@ class CAdmin extends Controller
             return redirect()->to('../CAdmin/Setting');
         }
         if (!$NoHp) {
-            session()->setFlashData('alert', '3|Harap isi Nama!');
+            session()->setFlashData('alert', '3|Harap isi Nomor HP!');
             return redirect()->to('../CAdmin/Setting');
         }
 
@@ -194,7 +214,7 @@ class CAdmin extends Controller
 
         if (!$qry->upd('tcomp', $updateData)) {
             $qry->db->transRollback();
-            session()->setFlashData('alert', "3|Terjadi Kesalahan Update Activation Key, {$activationKey}!");
+            session()->setFlashData('alert', '3|Terjadi Kesalahan Update Data Company!');
             return redirect()->to('../CAdmin/Setting');
         }
 
@@ -225,16 +245,25 @@ class CAdmin extends Controller
 
         $xI = 1;
         foreach (['Topup', 'Sales', 'Placement', 'Withdraw', 'CheckIn', 'Prize', 'Commission'] as $q) {
-            $xKodeDepan = $this->request->getPost("txtKodeDepan{$q}");
-            if ($xKodeDepan == '') {
+            $xKodeDepan = trim($this->request->getPost("txtKodeDepan{$q}"));
+            
+            // Validate KodeDepan input
+            if (empty($xKodeDepan)) {
                 $qry->db->transRollback();
-                session()->setFlashData('alert', '3|Kode Depan Tidak Boleh Kosong!');
+                session()->setFlashData('alert', "3|Kode Depan {$q} tidak boleh kosong!");
+                return redirect()->to('../CAdmin/Setting');
+            }
+            
+            // Sanitize KodeDepan - only allow alphanumeric characters
+            if (!preg_match('/^[A-Za-z0-9]+$/', $xKodeDepan)) {
+                $qry->db->transRollback();
+                session()->setFlashData('alert', "3|Kode Depan {$q} hanya boleh berisi huruf dan angka!");
                 return redirect()->to('../CAdmin/Setting');
             }
 
             if (!$qry->upd('tjenistrans', array('kodedepan' => $xKodeDepan), array('id' => $xI++))) {
                 $qry->db->transRollback();
-                session()->setFlashData('alert', '3|Terjadi Kesalahan Update Kode Depan!');
+                session()->setFlashData('alert', "3|Terjadi Kesalahan Update Kode Depan {$q}!");
                 return redirect()->to('../CAdmin/Setting');
             }
         }
