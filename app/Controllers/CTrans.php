@@ -35,7 +35,8 @@ class CTrans extends Controller
         $qry = new Base_model;
         $xJam = new DateTime($qry->getWaktu());
         $myID = session('idUser');
-        $dtStart = $xJam->format("Y-m-d");
+        $startJam = clone $xJam;
+        $dtStart = $startJam->modify($xJam->format("H") < 10 ? '-1 day' : '+0 day')->format("Y-m-d");
         $dtEnd = $xJam->format("Y-m-d");
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -241,7 +242,8 @@ class CTrans extends Controller
         $qry = new Base_model();
         $xJam = new DateTime($qry->getWaktu());
 
-        $dtStart = $this->request->getPost('dtStart');
+        $startJam = clone $xJam;
+        $dtStart = $startJam->modify($xJam->format("H") < 10 ? '-1 day' : '+0 day')->format("Y-m-d");
         $dtEnd = $this->request->getPost('dtEnd');
         if (!$dtStart) {
             $dtStart = $xJam->format("Y-m-d");
