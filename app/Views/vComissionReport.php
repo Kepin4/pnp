@@ -232,6 +232,10 @@ function frmtTD(float $xVal, bool $reverse = false, bool $isNoColor = false, $xT
         $('#ExportExcel').on('click', function() {
             SendReport(xForm, 'CExport/PlacementReport/Excel')
         });
+
+        receiveSignal('ReportCommission', function(data) {
+            $('#frmFilter').submit();
+        });
     })
 
     function xViewDetail(ID, Bool) {

@@ -203,5 +203,9 @@
         $('#ExportExcel').on('click', function() {
             SendReport(xForm, 'CExport/PlacementReport/Excel')
         });
+
+        receiveSignal('ReportPlacement', function(data) {
+            $('#frmFilter').submit();
+        });
     })
 </script>

@@ -217,5 +217,9 @@
         $('#ExportExcel').on('click', function() {
             SendReport(xForm, 'CExport/ShiftReport/Excel')
         });
+
+        receiveSignal('ReportShift', function(data) {
+            $('#frmFilter').submit();
+        })
     })
 </script>

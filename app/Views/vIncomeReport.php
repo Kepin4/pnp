@@ -244,6 +244,10 @@ function frmtTD(float $xVal, bool $reverse = false, bool $isNoColor = false)
         $('#ExportExcel').on('click', function() {
             SendReport(xForm, 'CExport/IncomeReport/Excel')
         });
+
+        receiveSignal('ReportIncome', function(data) {
+            $('#frmFilter').submit();
+        });
     })
 
     function xViewDetail(ID, Bool) {

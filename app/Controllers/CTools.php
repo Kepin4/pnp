@@ -6,6 +6,7 @@ use CodeIgniter\Controller;
 use App\Models\Base_model;
 use App\Libraries\func;
 use CodeIgniter\CLI\Console;
+use CodeIgniter\HTTP\Method;
 use DateTime;
 use stdClass;
 
@@ -135,6 +136,26 @@ class CTools extends Controller
         }
 
         return (object) array('Topup' => $RecTopup, 'Withdraw' => $RecWithdraw);
+    }
+
+    public function AjaxGetNotif()
+    {
+        $qry = new Base_model();
+
+        $myLevel = session('level');
+
+        if ($myLevel >= 3) {
+            return json_encode((object) array('Topup' => false, 'Withdraw' => false));
+        }
+
+        $str = "SELECT 1 FROM treqtopup WHERE status = 1";
+        $dtTopup = $qry->use($str);
+        $RecTopup = count($dtTopup) > 0;
+
+        $str = "SELECT 1 FROM treqwithdraw WHERE status = 1";
+        $dtWithdraw = $qry->use($str);
+        $RecWithdraw = count($dtWithdraw) > 0;
+        return json_encode((object) array('Topup' => $RecTopup, 'Withdraw' => $RecWithdraw));
     }
 
     public function cekActivationKey($key)
@@ -287,5 +308,37 @@ class CTools extends Controller
 
         $qry = new Base_model();
         return $qry->exec($queryContent);
+    }
+
+    public function webSocketTest()
+    {
+        // Check if user is level 1 (Maintenance)
+        if (session('level') != 1) {
+            return redirect()->to('/CBase')->with('alert', '3|Access denied. Only maintenance level users can access this page.');
+        }
+
+        return view('vWebSocketTest');
+    }
+
+    public function sendSignal($type)
+    {
+        $request = \Config\Services::request();
+
+        if (is_cli() === false && $request !== null) {
+            $router = \Config\Services::router();
+            $currentMethod = $router->methodName();
+            if (strtolower($currentMethod) === 'sendsignal') {
+                return redirect()->to('/CBase')->with('alert', '3|Invalid request method.');
+            }
+        }
+
+        include_once APPPATH . 'Config/WebSocketScript.php';
+
+        echo "<script>
+            setTimeout(() => {
+                console.log('Sending signal: {$type}');
+                sendSignalPhp('{$type}');
+            }, 500);
+        </script>";
     }
 }

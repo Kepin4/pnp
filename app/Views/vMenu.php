@@ -8,14 +8,6 @@
     box-sizing: border-box;
   }
 </style>
-<?php
-
-use App\Controllers\CTools;
-
-$CT = new CTools;
-$Notif = $CT->getNotif();
-
-?>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -82,6 +74,17 @@ $Notif = $CT->getNotif();
               <i class="fa fa-circle-dot" style="color: #3a416f;"></i>
             </div>
             <span class="nav-link-text ms-1">Number</span>
+          </a>
+        </li>
+      <?php } ?>
+
+      <?php if (session('level') == 1) { ?>
+        <li class="nav-item">
+          <a class="nav-link" href="<?= base_url('/CTools/webSocketTest') ?>">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center" style="color: #3a416f">
+              <i class="fas fa-plug" style="color: #3a416f;"></i>
+            </div>
+            <span class="nav-link-text ms-1">WebSocket Test</span>
           </a>
         </li>
       <?php } ?>
@@ -201,7 +204,7 @@ $Notif = $CT->getNotif();
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-envelope" style="color: #3a416f;"></i>
           </div>
-          <span class="nav-link-text ms-1"><span style="font-size: 15px; color: red;"><?= $Notif->Topup ?> </span>Permintaan TopUp</span>
+          <span class="nav-link-text ms-1"><span id="alertTopUp" style="font-size: 15px; color: red;"></span>Permintaan TopUp</span>
         </a>
       </li>
 
@@ -210,7 +213,7 @@ $Notif = $CT->getNotif();
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-envelope" style="color: #3a416f;"></i>
           </div>
-          <span class="nav-link-text ms-1"><span style="font-size: 15px; color: red;"><?= $Notif->Withdraw ?> </span>Permintaan Withdraw</span>
+          <span class="nav-link-text ms-1"><span id="alertWithdraw" style="font-size: 15px; color: red;"></span>Permintaan Withdraw</span>
         </a>
       </li>
 
@@ -281,7 +284,41 @@ $Notif = $CT->getNotif();
     if (xSesAlert) {
       fAlert(xSesAlert);
     }
+
+
+    // WebSocket Signal Trigger
+    const xSesSignal = <?= json_encode(session()->getFlashdata('signal')) ?> || [];
+    if (xSesSignal.length > 0) {
+      setTimeout(() => {
+        xSesSignal.forEach((x) => {
+          sendSignal(x);
+        });
+      }, 500);
+    }
+
+    // Check Request
+    receiveSignal('SignalRequest', function(data) {
+      reCheckRequest();
+    });
+
+    reCheckRequest();
   });
+
+
+  function reCheckRequest() {
+    $.ajax({
+      url: '<?= base_url('/CTools/AjaxGetNotif') ?>',
+      method: 'GET',
+      dataType: 'json',
+      success: function(response) {
+        $('#alertTopUp').text(response.Topup ? ' * ' : '');
+        $('#alertWithdraw').text(response.Withdraw ? ' * ' : '');
+      },
+      error: function(xhr, status, error) {
+        console.error('AJAX error:', status, error);
+      }
+    });
+  }
 
 
 
@@ -322,4 +359,163 @@ $Notif = $CT->getNotif();
       AlertBox.hide();
     }, 5000);
   };
+
+  // WebSocket Client Implementation
+  class WebSocketClient {
+    constructor() {
+      this.socket = null;
+      this.isConnected = false;
+      this.clientId = null;
+      this.reconnectAttempts = 0;
+      this.maxReconnectAttempts = 5;
+      this.reconnectDelay = 3000;
+    }
+
+    connect() {
+      try {
+        // Determine WebSocket URL based on current location
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        let hostname = window.location.hostname;
+
+        // Handle cases where hostname might be empty or localhost variations
+        if (!hostname || hostname === '') {
+          hostname = 'localhost';
+        }
+
+        const wsUrl = `${protocol}//${hostname}:8081`;
+
+        console.log('Connecting to WebSocket server:', wsUrl);
+        this.socket = new WebSocket(wsUrl);
+
+        this.socket.onopen = () => {
+          console.log('WebSocket connected');
+          this.isConnected = true;
+          this.reconnectAttempts = 0;
+        };
+
+        this.socket.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            this.handleMessage(message);
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+          }
+        };
+
+        this.socket.onclose = () => {
+          console.log('WebSocket disconnected');
+          this.isConnected = false;
+          this.clientId = null;
+          this.attemptReconnect();
+        };
+
+        this.socket.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+
+      } catch (error) {
+        console.error('Failed to create WebSocket connection:', error);
+        this.attemptReconnect();
+      }
+    }
+
+    handleMessage(message) {
+      console.log('Received WebSocket message:', message);
+
+      switch (message.type) {
+        case 'welcome':
+          this.clientId = message.clientId;
+          console.log('WebSocket client ID:', this.clientId);
+          break;
+
+        case 'signal':
+          // Trigger signal event for other pages to listen
+          window.dispatchEvent(new CustomEvent('websocket-signal', {
+            detail: {
+              signal: message.signal,
+              data: message.data || {},
+              timestamp: message.timestamp,
+              fromClientId: message.fromClientId
+            }
+          }));
+          console.log('Signal received:', message.signal);
+          break;
+
+        case 'error':
+          console.error('WebSocket server error:', message.message);
+          break;
+
+        default:
+          console.log('Unknown message type:', message.type);
+      }
+    }
+
+    sendSignal(signalType, data = {}) {
+      if (!this.isConnected || !this.socket) {
+        console.warn('WebSocket not connected. Attempting to connect...');
+        this.connect();
+        return false;
+      }
+
+      const message = {
+        type: 'signal',
+        signal: signalType,
+        data: data
+      };
+
+      try {
+        this.socket.send(JSON.stringify(message));
+        console.log('Signal sent:', signalType, data);
+        return true;
+      } catch (error) {
+        console.error('Failed to send signal:', error);
+        return false;
+      }
+    }
+
+    attemptReconnect() {
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.reconnectAttempts++;
+        console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+
+        setTimeout(() => {
+          this.connect();
+        }, this.reconnectDelay);
+      } else {
+        console.error('Max reconnection attempts reached. Please refresh the page.');
+      }
+    }
+
+    disconnect() {
+      if (this.socket) {
+        this.socket.close();
+      }
+    }
+  }
+
+  // Global WebSocket client instance
+  let wsClient = null;
+
+  // Initialize WebSocket connection when page loads
+  $(document).ready(function() {
+    wsClient = new WebSocketClient();
+    wsClient.connect();
+  });
+
+  // Global function to send signals (as requested)
+  function sendSignal(signalType, data = {}) {
+    if (wsClient) {
+      return wsClient.sendSignal(signalType, data);
+    } else {
+      console.error('WebSocket client not initialized');
+      return false;
+    }
+  }
+
+  // Clean up WebSocket connection when page unloads
+  $(window).on('beforeunload', function() {
+    if (wsClient) {
+      wsClient.disconnect();
+    }
+  });
 </script>

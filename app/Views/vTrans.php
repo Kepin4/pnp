@@ -266,5 +266,10 @@
         $('#ExportExcel').on('click', function() {
             SendReport(xForm, 'CExport/TransactionReport/Excel')
         });
+
+
+        receiveSignal('ReportTransaction', function(data) {
+            $('#frmFilter').submit();
+        });
     })
 </script>

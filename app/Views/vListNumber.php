@@ -59,7 +59,7 @@
                     <div class="card mb-4">
                         <div class="card-header pt-3 pb-1">
 
-                            <form action="<?= base_url('/CTrans/ListNumber') ?>" method="POST">
+                            <form id="frmFilter" action="<?= base_url('/CTrans/ListNumber') ?>" method="POST">
                                 <?= csrf_field() ?>
                                 <div class="filter-box">
                                     <h5>Filter Tanggal</h5>
@@ -204,5 +204,9 @@
 <script>
     $(document).ready(function() {
         $('#tblTrans').DataTable({});
+
+        receiveSignal('ReportListNumber', function(data) {
+            $('#frmFilter').submit();
+        });
     })
 </script>

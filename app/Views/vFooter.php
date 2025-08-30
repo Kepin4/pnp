@@ -34,6 +34,24 @@ if (!(session('level') >= 1 && session('level') <= 3)) {
 
 
 <script>
+  // Function to receive specific signals (as requested)
+  function receiveSignal(signalType, callback) {
+    window.addEventListener('websocket-signal', function(event) {
+      const signalData = event.detail;
+      if (signalData.signal === signalType) {
+        if (typeof callback === 'function') {
+          callback(signalData.data);
+        } else {
+          console.warn('Callback is not a function for signal:', signalType);
+        }
+      }
+    });
+  }
+</script>
+
+
+
+<script>
   function formatNumber(value) {
     return value.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,

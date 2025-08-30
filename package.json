@@ -1,7 +1,12 @@
 {
     "scripts": {
         "start": "nodemon --exec php spark serve --ext php --ignore vendor/ --ignore writable/",
-        "watch": "nodemon"
+        "watch": "nodemon",
+        "websocket": "node websocket-server.js",
+        "websocket-dev": "nodemon websocket-server.js"
+    },
+    "dependencies": {
+        "ws": "^8.14.2"
     },
     "devDependencies": {
         "nodemon": "^2.0.0"
