@@ -552,7 +552,10 @@
             $('#pnlRefused').css('display', 'none');
         });
 
-
+        // WebSocket Signal Listener for auto-refresh
+        receiveSignal('NewNumber', function(data) {
+            window.location.reload();
+        });
 
         // Function
         function setTimer() {
@@ -564,7 +567,7 @@
                 xintId = setInterval(waitRespond, 3000);
             } else {
                 if (RefreshMe) {
-                    window.location.reload();
+                    // window.location.reload();
                 }
                 isAllowed = true;
                 lblTimer.text(getTimeDifference(xNow, xEnd, "ms"));

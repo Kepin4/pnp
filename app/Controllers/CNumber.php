@@ -696,7 +696,7 @@ class CNumber extends Controller
         }
 
         session()->setFlashdata('alert', "5|Success UPDATE NUMBER!");
-        fSendSignal('ReportListNumber', 'ReportShift', 'ReportTransaction', 'ReportPlacement', "ReportIncome", 'ReportCommission', 'ReportInvoice');
+        fSendSignal('ReportListNumber', 'ReportShift', 'ReportTransaction', 'ReportPlacement', "ReportIncome", 'ReportCommission', 'ReportInvoice', 'NewNumber');
         return redirect()->to('/CNumber/SetNumber');
     }
 
